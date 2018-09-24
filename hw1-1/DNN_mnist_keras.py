@@ -19,4 +19,10 @@ y_test = keras.utils.to_categorical(y_test)
 
 
 model = keras.models.Sequential()
-model.add(keras.layers.Dense(input_dim=(784,),units=100,activation='relu'))
+model.add(keras.layers.Dense(input_shape=(784,),units=100,activation='relu'))
+model.add(keras.layers.Dense(units=100,activation='relu'))
+model.add(keras.layers.Dense(units=100,activation='relu'))
+model.add(keras.layers.Dense(units=10,activation='softmax'))
+
+model.compile(optimizer = 'Adam', loss = 'categorical_crossentropy', metrics=['accuracy'])
+model.fit(x = x_train, y = y_train, batch_size = 16, epochs = 20)
