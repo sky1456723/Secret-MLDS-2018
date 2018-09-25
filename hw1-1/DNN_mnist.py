@@ -48,7 +48,7 @@ prediction = tf.argmax(output_layer2, 1)
 #model2
 layer1_model2 = tf.layers.dense(x, units=100)
 layer1_model2 = tf.nn.relu(layer1_model2)
-layer2_model2 = tf.layers.dense(layer1_model2, units=200)
+layer2_model2 = tf.layers.dense(layer1_model2, units=191)
 layer2_model2 = tf.nn.relu(layer2_model2)
 output1_model2 = tf.layers.dense(layer2_model2, units = 10)
 output2_model2 = tf.nn.softmax(output1_model2)
@@ -68,7 +68,10 @@ train_op1 = training1.minimize(loss_model1)
 training2 = tf.train.AdamOptimizer()
 train_op2 = training2.minimize(loss_model2)
 
-
+model1_acc_list = []
+model1_loss_list = []
+model2_acc_list = []
+model2_loss_list = []
 with tf.Session() as sess:
     print("initialize...")
     sess.run(tf.global_variables_initializer())
@@ -100,11 +103,16 @@ with tf.Session() as sess:
         print("model1(deep):")
         print(training_acc1)
         print(training_loss1)
+        model1_acc_list.append(training_acc1)
+        model1_loss_list.append(training_loss1)
         print("model2(shallow):")
         print(training_acc2)
         print(training_loss2)
+        model2_acc_list.append(training_acc2)
+        model2_loss_list.append(training_loss2)
         #sess.run(tf.local_variables_initializer())
-    
+
+epoch_num = list(range(epoch))    
 plt.plot(epoch_num, model1_acc_list, label='deep')
 plt.plot(epoch_num, model2_acc_list, label='shallow')
 plt.xlabel("epoch", fontsize=16)
@@ -114,7 +122,7 @@ plt.show()
 plt.plot(epoch_num, model1_loss_list, label='deep')
 plt.plot(epoch_num, model2_loss_list, label='shallow')
 plt.xlabel("epoch", fontsize=16)
-plt.ylabel("acc", fontsize=16)
+plt.ylabel("cross_entropy", fontsize=16)
 plt.legend(loc = 'upper right', fontsize=16)
-
+plt.show()
     
