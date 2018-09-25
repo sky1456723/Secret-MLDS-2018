@@ -8,7 +8,7 @@ Created on Sun Sep 23 05:25:13 2018
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
 tf.reset_default_graph()
 
 
