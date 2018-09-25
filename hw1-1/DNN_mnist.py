@@ -32,11 +32,6 @@ train_dataset = train_dataset.repeat()
 train_dataset = train_dataset.shuffle(30000)
 train_iter = train_dataset.make_initializable_iterator()
 
-#x_train = tf.train.batch(list(x_train), batch_size)
-#y_train = tf.train.batch(y_train, batch_size)
-#x_test = tf.train.batch(x_test, batch_size)
-#y_test = tf.train.batch(y_test, batch_size)
-
 x, y = train_iter.get_next()
 
 layer1 = tf.layers.dense(x, units=100)
@@ -47,14 +42,32 @@ layer3 = tf.layers.dense(layer2, units=100)
 layer3 = tf.nn.relu(layer3)
 output_layer = tf.layers.dense(layer3, units=10)
 output_layer2 = tf.nn.softmax(output_layer)
-
 prediction = tf.argmax(output_layer2, 1)
-correct_ans = tf.argmax(y, 1)
-acc = tf.reduce_mean( tf.cast( tf.equal(correct_ans, prediction), dtype = tf.float32))
 
-loss = tf.losses.softmax_cross_entropy(y, output_layer)
-training = tf.train.AdamOptimizer()
-train_op = training.minimize(loss)
+#=========================
+#model2
+layer1_model2 = tf.layers.dense(x, units=100)
+layer1_model2 = tf.nn.relu(layer1_model2)
+layer2_model2 = tf.layers.dense(layer1_model2, units=200)
+layer2_model2 = tf.nn.relu(layer2_model2)
+output1_model2 = tf.layers.dense(layer2_model2, units = 10)
+output2_model2 = tf.nn.softmax(output1_model2)
+prediction_model2 =  tf.argmax(output2_model2, 1)
+#=========================
+
+correct_ans = tf.argmax(y, 1)
+acc_model1 = tf.reduce_mean( tf.cast( tf.equal(correct_ans, prediction), dtype = tf.float32))
+
+acc_model2 = tf.reduce_mean( tf.cast( tf.equal(correct_ans, prediction_model2), dtype = tf.float32))
+
+loss_model1 = tf.losses.softmax_cross_entropy(y, output_layer)
+loss_model2 = tf.losses.softmax_cross_entropy(y, output1_model2)
+
+training1 = tf.train.AdamOptimizer()
+train_op1 = training1.minimize(loss_model1)
+training2 = tf.train.AdamOptimizer()
+train_op2 = training2.minimize(loss_model2)
+
 
 with tf.Session() as sess:
     print("initialize...")
@@ -63,22 +76,45 @@ with tf.Session() as sess:
     sess.run(train_iter.initializer, feed_dict={train_data : x_train, train_label : y_train})
     print("Start Training")
     for i in range(epoch):
-        training_loss = 0
-        training_acc = 0
+        training_loss1 = 0
+        training_acc1 = 0
+        training_loss2 = 0
+        training_acc2 = 0
         for j in range(60000//batch_size):
-            batch_loss = sess.run(loss)
-            sess.run(train_op)
-            batch_acc = sess.run(acc)
-            training_loss += batch_loss
-            training_acc += batch_acc
-        training_loss /= (60000//batch_size)
-        training_acc /= (60000//batch_size)
+            batch_loss1 = sess.run(loss_model1)
+            batch_loss2 = sess.run(loss_model2)
+            sess.run(train_op1)
+            sess.run(train_op2)
+            batch_acc1 = sess.run(acc_model1)
+            batch_acc2 = sess.run(acc_model2)
+            training_loss1 += batch_loss1
+            training_loss2 += batch_loss2
+            training_acc1 += batch_acc1
+            training_acc2 += batch_acc2
+        training_loss1 /= (60000//batch_size)
+        training_loss2 /= (60000//batch_size)
+        training_acc1 /= (60000//batch_size)
+        training_acc2 /= (60000//batch_size)
         #sess.run(acc_op)
         print("epoch: ",i)
-        print(training_acc)
-        print(training_loss)
+        print("model1(deep):")
+        print(training_acc1)
+        print(training_loss1)
+        print("model2(shallow):")
+        print(training_acc2)
+        print(training_loss2)
         #sess.run(tf.local_variables_initializer())
     
-
+plt.plot(epoch_num, model1_acc_list, label='deep')
+plt.plot(epoch_num, model2_acc_list, label='shallow')
+plt.xlabel("epoch", fontsize=16)
+plt.ylabel("acc", fontsize=16)
+plt.legend(loc = 'lower right', fontsize=16)
+plt.show()
+plt.plot(epoch_num, model1_loss_list, label='deep')
+plt.plot(epoch_num, model2_loss_list, label='shallow')
+plt.xlabel("epoch", fontsize=16)
+plt.ylabel("acc", fontsize=16)
+plt.legend(loc = 'upper right', fontsize=16)
 
     
