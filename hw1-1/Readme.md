@@ -7,3 +7,9 @@ Actual task part :
         The script is written in tensorflow1.10.0 and python3.6.5.  
         Please use instruction in terminal like: "python DNN_mnist.py"  
         It will plot two charts(loss and acc).  
+
+CNN.py:  
+        To run, type "python CNN.py" in terminal.  
+        Python 3.6 is recommended.  
+        This script trains 3 CNN models and plots their accuracies and losses after 300 steps.  
+        The figures are saved as "Loss.png" and "Accuracy.png"
