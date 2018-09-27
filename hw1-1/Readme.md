@@ -1,20 +1,20 @@
 # HW1-1
-Simulate a Function:
-    1. Triangular function:
-        trig_func.py :
-            Building three different models, all with almost 13,600 parameters.
-            It simulates the triangular function.
-            Default epoch number is 1,000. 20,000 epochs tried.
-    2. Sinc function:
-        sinc_func.py :
-            Building three different models, all with almost 13,600 parameters.
-            It simulates the sinc function.
-            Default epoch number is 1,000. 20,000 epochs tried.
-    Both programs will draw a graph to show the simulation results.
-    Running at different time gets different results. But, mostly deep models perform better. 
-        Even sometimes the initialization greatly influences the result.
-    With MSE as the loss function, MAE is also shown for comparison. 
-    Also, difference between the simulated function and learned result is shown in another graph.
+Simulate a Function:  
+    1. Triangular function:  
+        trig_func.py :  
+            Building three different models, all with almost 13,600 parameters.  
+            It simulates the triangular function.  
+            Default epoch number is 1,000. 20,000 epochs tried.  
+    2. Sinc function:  
+        sinc_func.py :  
+            Building three different models, all with almost 13,600 parameters.  
+            It simulates the sinc function.  
+            Default epoch number is 1,000. 20,000 epochs tried.  
+    Both programs will draw a graph to show the simulation results.  
+    Running at different time gets different results. But, mostly deep models perform better.   
+        Even sometimes the initialization greatly influences the result.  
+    With MSE as the loss function, MAE is also shown for comparison.   
+    Also, difference between the simulated function and learned result is shown in another graph.  
 
 Actual task part :  
     DNN_mnist.py :  
