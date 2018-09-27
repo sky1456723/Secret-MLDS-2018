@@ -31,14 +31,13 @@ color_buffer = ['ro', 'yo', 'bo']
 tries = 3
 
 for j in range(tries):
-	epochs_tried, batches = 20000, 32
+	epochs_tried, batches = 1000, 32
 	if j == 0:
-		neurons = [25,25,10,20,100,10,90,50,5,20,10,100,10,25]
+		neurons = [92,25,300,10,28]
 	if j == 1:
-		neurons = [5,2,4,8,20,5,40,25,40,100,25,20,50,20,35]
+		neurons = [30,54,20,40,100,25,20,45,20,44]
 	if j == 2:
-		neurons = [19,15,10,10,70,20,80,50,20,20,30,50,10,10,5]
-
+		neurons = [15,6,3,10,70,19,80,50,20,10,30,50,30,20,20]
 
 	model = Sequential()
 	model.add(Dense(units=neurons[0], activation='relu', input_dim=X.shape[1]))
