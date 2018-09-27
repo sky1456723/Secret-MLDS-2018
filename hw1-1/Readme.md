@@ -25,7 +25,7 @@ Actual task part :
         Please use instruction in terminal like: "python DNN_mnist.py"  
         It will plot two charts(loss and acc).  
 
-    CNN.py:  
+CNN.py:  
         To run, type "python CNN.py" in terminal.  
         Python 3.6 is recommended.  
         This script trains 3 CNN models and plots their accuracies and losses after 300 steps.  
