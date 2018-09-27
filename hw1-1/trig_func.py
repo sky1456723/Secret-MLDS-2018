@@ -38,11 +38,11 @@ tries = 3
 for j in range(tries):
 	epochs_tried, batches = 1000, 32
 	if j == 0:
-		neurons = [51,200,80,3,9]
+		neurons = [51,100,80,3,10]
 	if j == 1:
-		neurons = [124,25,20,12,20,40,25,110,90,50,25,56]
+		neurons = [100,26,18,21,25,70,60,25,67]
 	if j == 2:
-		neurons = [12,30,20,25,20,80,10,40,30,100,100,25,100,20,13]
+		neurons = [120,19,14,8,23,11,40,30,90,23,70,20,26]
 
 	model = Sequential()
 	model.add(Dense(units=neurons[0], activation='relu', input_dim=X.shape[1]))
