@@ -17,25 +17,32 @@ import torch.utils.data
 mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 x_train = np.reshape(x_train, (-1,784)) / 255
+x_test = np.reshape(x_test, (-1,784)) / 255
 
 simulate_func_x = np.reshape( np.array(list(range(0,1000))) / 100, (-1,1))
 simulate_func_y = np.sinc(simulate_func_x)
+
 
 
 batch = 32
 epoch = 10
 tensor_train_x = torch.Tensor(x_train)
 tensor_train_y = torch.LongTensor(y_train)
+tensor_test_x = torch.Tensor(x_test)
+tensor_test_y = torch.LongTensor(y_test)
 
 tensor_train_x2 = torch.Tensor(simulate_func_x)
 tensor_train_y2 = torch.Tensor(simulate_func_y)
 
+
 dataset = torch.utils.data.TensorDataset(tensor_train_x, tensor_train_y)
 dataset2 = torch.utils.data.TensorDataset(tensor_train_x2, tensor_train_y2)
 
+test_dataset = torch.utils.data.TensorDataset(tensor_test_x, tensor_test_y)
+
 dataloader = torch.utils.data.DataLoader(dataset = dataset, batch_size = batch, shuffle = True)
 dataloader2 = torch.utils.data.DataLoader(dataset = dataset2, batch_size = batch, shuffle = True)
-
+test_dataloader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = batch, shuffle = True)
 
 class myModule(torch.nn.Module):
     def __init__(self, input_dim, batch_size):
@@ -88,6 +95,8 @@ for epoch_num in range(epoch):
         grad_list.append(grad_norm)
         
         optimizer.zero_grad()
+        
+        loss_list.append(cross_entropy.item())
     acc /= (np.shape(x_train)[0] / batch)
     epoch_loss /= (np.shape(x_train)[0] / batch)
     #print("weight norm: ", model.layer1.weight.norm().item())
@@ -95,8 +104,8 @@ for epoch_num in range(epoch):
     
     print("accuracy: ", acc)
     print("loss: ", epoch_loss)
-    loss_list.append(epoch_loss)
-    acc_list.append(acc)
+    #loss_list.append(epoch_loss)
+    #acc_list.append(acc)
 
 #===========================================
 #simulate sinc function
@@ -132,10 +141,14 @@ for epoch_num in range(epoch):
         grad_norm = grad_all ** 0.5
         grad_list2.append(grad_norm)
         
+        
+        loss_list2.append(MSE.item())
+        
+        
         optimizer2.zero_grad()
     epoch_loss /= (np.shape(simulate_func_x)[0]//batch + 1)
     print("loss: ", epoch_loss)
-    loss_list2.append(epoch_loss)
+    #loss_list2.append(epoch_loss)
 #=============================================
 #plot-MNIST
 plt.plot(iter_num_list, grad_list)
@@ -143,15 +156,11 @@ plt.xlabel("iteration", fontsize=16)
 plt.ylabel("norm", fontsize=16)
 plt.show()
 
-plt.plot(epoch_num_list, loss_list)
-plt.xlabel("epoch", fontsize=16)
+plt.plot(iter_num_list, loss_list)
+plt.xlabel("iteration", fontsize=16)
 plt.ylabel("cross_entropy", fontsize=16)
 plt.show()
 
-plt.plot(epoch_num_list, acc_list)
-plt.xlabel("epoch", fontsize=16)
-plt.ylabel("acc", fontsize=16)
-plt.show()
 
 #plot-simulate a function
 plt.plot(iter_num_list2, grad_list2)
@@ -159,7 +168,7 @@ plt.xlabel("iteration", fontsize=16)
 plt.ylabel("norm", fontsize=16)
 plt.show()
 
-plt.plot(epoch_num_list, loss_list2)
-plt.xlabel("epoch", fontsize=16)
+plt.plot(iter_num_list2, loss_list2)
+plt.xlabel("iteration", fontsize=16)
 plt.ylabel("MSE", fontsize=16)
 plt.show()
