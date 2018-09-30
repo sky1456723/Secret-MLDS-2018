@@ -151,23 +151,25 @@ for epoch_num in range(epoch):
     #loss_list2.append(epoch_loss)
 #=============================================
 #plot-MNIST
+plt.subplot(2,2,1)
 plt.plot(iter_num_list, grad_list)
 plt.xlabel("iteration", fontsize=16)
 plt.ylabel("norm", fontsize=16)
-plt.show()
 
+plt.subplot(2,2,3)
 plt.plot(iter_num_list, loss_list)
 plt.xlabel("iteration", fontsize=16)
 plt.ylabel("cross_entropy", fontsize=16)
-plt.show()
+
 
 
 #plot-simulate a function
+plt.subplot(2,2,2)
 plt.plot(iter_num_list2, grad_list2)
 plt.xlabel("iteration", fontsize=16)
 plt.ylabel("norm", fontsize=16)
-plt.show()
 
+plt.subplot(2,2,4)
 plt.plot(iter_num_list2, loss_list2)
 plt.xlabel("iteration", fontsize=16)
 plt.ylabel("MSE", fontsize=16)

@@ -50,12 +50,15 @@ class myModule(torch.nn.Module):
         out4 = self.layer4(act3)
         output = self.activation2(out4)
         return output
+acc_list = []
+loss_list = []
 
 layer4_list = []
 whole_model_list = []
 model_num = 8
 for i in range(model_num):
-    
+    acc_list.append([])
+    loss_list.append([])
     model = myModule(784, batch)
     loss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters())
@@ -82,7 +85,8 @@ for i in range(model_num):
         epoch_loss /= (np.shape(x_train)[0] / batch)
         print("training_acc: ", acc)
         print("loss: ", epoch_loss)
-        
+        acc_list[i].append(acc)
+        loss_list[i].append(epoch_loss)
         
         if(epoch_num%3==0):
             l1 = model.layer1.weight.clone()
@@ -107,18 +111,34 @@ for i in range(model_num):
     
 layer4_list = np.array(layer4_list)
 whole_model_list = np.array(whole_model_list)
+acc_list = np.array(acc_list)
+epoch_num = np.array(list(range(epoch)))
 
 pca = sklearn.decomposition.PCA(n_components=2)
 new_point_layer4 = pca.fit_transform(layer4_list)
 new_point_whole = pca.fit_transform(whole_model_list)
 
 index = epoch//3
+
+plt.subplot(2,2,1)
 for i in range(model_num):
     plt.scatter(new_point_layer4[i*index:(i+1)*index,0], new_point_layer4[i*index:(i+1)*index,1])
 plt.title("layer4", fontdict={'fontsize': 16})
-plt.show()
 
+
+plt.subplot(2,2,3)
 for i in range(model_num):
     plt.scatter(new_point_whole[i*index:(i+1)*index,0], new_point_whole[i*index:(i+1)*index,1])
 plt.title("whole model", fontdict={'fontsize': 16})
+
+
+plt.subplot(2,2,2)
+for i in range(model_num):
+    plt.plot(epoch_num, loss_list[i])
+plt.title("loss", fontdict={'fontsize': 16})
+
+plt.subplot(2,2,4)
+for i in range(model_num):
+    plt.plot(epoch_num, acc_list[i])
+plt.title("acc", fontdict={'fontsize': 16})
 plt.show()
