@@ -128,8 +128,4 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.savefig('Loss.png')
 
-
-plt.show()
-
-
 # no main - simplicity first
