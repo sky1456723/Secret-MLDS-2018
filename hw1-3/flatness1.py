@@ -134,7 +134,7 @@ axes.set_xlabel("interpolation factor", fontsize = 16)
 axes.set_ylabel("cross_entropy", fontsize = 16, color = 'r')
 axes2.set_ylabel("acc", fontsize = 16, color = 'b')
 plt.legend(loc = 'upper right', fontsize=16)
-plt.savefig(".png")
+plt.savefig("flatness1.png")
 plt.show()
 
     
