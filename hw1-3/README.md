@@ -39,7 +39,7 @@ Final result will be shew on the terminal and save as "flatness1.png"
 Python 3.6 and PyTorch 0.4.1 are recommended.
 ## Execution
 ```
-$ python3 flatness1.py
+$ python3 flatness2.py
 ```
 ## Outcome
 This program will downloads CIFAR-10 dataset, and trains five models with different bathc size.
