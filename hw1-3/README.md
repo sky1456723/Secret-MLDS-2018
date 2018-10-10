@@ -7,7 +7,10 @@ $ python3 subtask1.py
 ```
 ## Outcome
 This program loads CIFAR-10 to the same directory of its.
+
 Several lines will be printed to the terminal including results of each epoch and total execution time.
+
+A picture named "Loss.png" is created after each execution.
 ```
 Epoch: 0, train loss = 2.3226, validation loss = 2.3078
 Epoch: 1, train loss = 2.3098, validation loss = 2.3063
