@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 batch = 10
-epoch = 20
+epoch = 50
 model_num = 5
 data = torchvision.datasets.CIFAR10("./",download=True, transform = 
                         torchvision.transforms.Compose([ torchvision.transforms.ToTensor()]))
@@ -92,51 +92,65 @@ for model_k in range(model_num):
     
     training_loss = 0
     training_acc = 0
+    grad_to_input_norm = 0
+
     for x, y in dataloader:
         x = x.cuda()
+        x.requires_grad_()
         y = y.cuda()
         y_pred = model(x)
         ans = y_pred.argmax(dim = 1)
         cross_entropy = loss(y_pred, y)
+        cross_entropy.backward()
+        grad_to_input_norm += torch.sqrt( torch.sum(x.grad**2) )
         training_loss += cross_entropy.item()
         training_acc += torch.sum(torch.eq(ans, y), dim = 0).item() / batch
     training_acc /= (len(data)/batch)
     training_loss /= (len(data)/batch)
     training_acc_list.append(training_acc)
     training_loss_list.append(training_loss)
+    norm_list.append(grad_to_input_norm / (len(data)/batch) )
     
     testing_loss = 0
     testing_acc = 0
-    grad_to_input_norm = 0
     for x, y in test_dataloader:
         model.batch = 100
         x = x.cuda()
-        x.requires_grad_()
         y = y.cuda()
          
         y_pred = model(x)
         ans = y_pred.argmax(dim = 1)
         cross_entropy = loss(y_pred, y)
-        cross_entropy.backward()
-        
-        grad_to_input_norm += torch.sqrt( torch.sum(x.grad**2) )
         testing_loss += cross_entropy.item()
         testing_acc += torch.sum(torch.eq(ans, y), dim = 0).item() / 100
     testing_acc /= (len(test_data)/100)
     testing_loss /= (len(test_data)/100)
     testing_acc_list.append(testing_acc)
     testing_loss_list.append(testing_loss)
-    norm_list.append(grad_to_input_norm / (len(test_data)/100) )
     batch *= 5
-
-plt.plot([10, 50, 250, 1250, 6250], norm_list)
-plt.plot([10, 50, 250, 1250, 6250], training_loss_list)
-plt.plot([10, 50, 250, 1250, 6250], testing_loss_list)
+ 
+fig1, axes = plt.subplots()
+axes2 = axes.twinx()
+axes.plot([10, 50, 250, 1250, 6250], norm_list, 'r-')
+axes.set_xlabel("batch_size", fontsize = 16)
+axes.set_ylabel("sensitivity", fontsize = 16)
+axes2.plot([10, 50, 250, 1250, 6250], training_loss_list, 'b-', label = "train")
+axes2.plot([10, 50, 250, 1250, 6250], testing_loss_list, 'b--', label = "test")
+axes2.set_ylabel("loss", fontsize = 16)
+plt.legend(loc = 'upper right', fontsize=16)
+plt.savefig("sensitivity_loss.png")
 plt.show()
 
-plt.plot([10, 50, 250, 1250, 6250], norm_list)
-plt.plot([10, 50, 250, 1250, 6250], training_acc_list)
-plt.plot([10, 50, 250, 1250, 6250], testing_acc_list)
+fig2, axes = plt.subplots()
+axes2 = axes.twinx()
+axes.plot([10, 50, 250, 1250, 6250], norm_list, 'r-')
+axes.set_xlabel("batch_size", fontsize = 16)
+axes.set_ylabel("sensitivity", fontsize = 16)
+axes2.plot([10, 50, 250, 1250, 6250], training_acc_list, 'b-', label = "train")
+axes2.plot([10, 50, 250, 1250, 6250], testing_acc_list, 'b--', label = "test")
+axes2.set_ylabel("accuracy", fontsize = 16)
+plt.legend(loc = 'upper right', fontsize=16)
+plt.savefig("sensitivity_acc.png")
 plt.show()
     
             
