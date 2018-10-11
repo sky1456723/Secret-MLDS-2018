@@ -21,7 +21,8 @@ mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 x_train = np.reshape(x_train, (-1,784)) / 255
 x_test = np.reshape(x_test, (-1,784)) / 255
-batch = range(1000, 10000, 1000)
+#batch = range(1000, 10000, 1000)'
+batch = [pow(10, i) for i in range(2, 7)]
 epoch = 4
 model_number = len(batch)
 
@@ -126,19 +127,34 @@ for model_num in range(model_number):
     new_model.load_state_dict(new_weight)
     '''
 
-
+sharpness_list = batch
 
 print("Start plotting")
 figure, axes = plt.subplots()
 axes2 = axes.twinx()
-axes.plot(batch, train_loss_list, 'r-', label = "train")
-axes.plot(batch, test_loss_list, 'r--', label = "test")
-axes2.plot(batch, train_acc_list, 'b-', label = "train")
-axes2.plot(batch, test_acc_list, 'b--', label = "test")
+axes.plot(batch, train_loss_list, 'b-', label = "train")
+axes.plot(batch, test_loss_list, 'b--', label = "test")
+axes2.plot(batch, sharpness_list, 'r-', label = "train")
+axes2.plot(batch, sharpness_list, 'r--', label = "test")
 axes.set_xlabel("batch_size", fontsize = 16)
-axes.set_ylabel("cross_entropy", fontsize = 16, color = 'r')
-axes2.set_ylabel("acc", fontsize = 16, color = 'b')
+axes.set_xscale('log')
+axes.set_ylabel("cross_entropy", fontsize = 16, color = 'b')
+axes2.set_ylabel("sharpness", fontsize = 16, color = 'r')
 plt.legend(loc = 'upper right', fontsize=16)
 plt.savefig("flatness1.png")
+plt.show()
+
+figure, axes = plt.subplots()
+axes2 = axes.twinx()
+axes.plot(batch, train_acc_list, 'b-', label = "train")
+axes.plot(batch, test_acc_list, 'b--', label = "test")
+axes2.plot(batch, sharpness_list, 'r-', label = "train")
+axes2.plot(batch, sharpness_list, 'r--', label = "test")
+axes.set_xlabel("batch_size", fontsize = 16)
+axes.set_xscale('log')
+axes.set_ylabel("acc", fontsize = 16, color = 'b')
+axes2.set_ylabel("sharpness", fontsize = 16, color = 'r')
+plt.legend(loc = 'upper right', fontsize=16)
+plt.savefig("flatness2.png")
 plt.show()
 #'''
