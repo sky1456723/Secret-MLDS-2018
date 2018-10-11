@@ -21,6 +21,16 @@ Finished training 20 epochs.
 5.6309 minutes elapsed.
 ```
 
+# subtask2.py
+## Environment
+Python 3.6 and PyTorch 0.4.1 are recommended.
+## Execution
+```
+$ python3 subtask2.py
+```
+
+A picture named "Loss.png" and a picture named "accuracy.png" are created after execution.
+
 # flatness1.py
 ## Environment
 Python 3.6 and PyTorch 0.4.1 are recommended.
