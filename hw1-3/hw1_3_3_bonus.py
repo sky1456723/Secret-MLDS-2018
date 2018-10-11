@@ -21,13 +21,13 @@ mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 x_train = np.reshape(x_train, (-1,784)) / 255
 x_test = np.reshape(x_test, (-1,784)) / 255
-batch = [16, 32, 64, 128, 256, 512]
-epoch = 10
+batch = range(1000, 10000, 1000)
+epoch = 4
 model_number = len(batch)
 
 tensor_train_x = torch.Tensor(x_train)
 tensor_train_y = torch.LongTensor(y_train)
-dataset = torch.utils.data.TensorDataset(tensor_train_x, tensor_train_y)
+train_dataset = torch.utils.data.TensorDataset(tensor_train_x, tensor_train_y)
 
 tensor_test_x = torch.Tensor(x_test)
 tensor_test_y = torch.LongTensor(y_test)
@@ -54,12 +54,17 @@ class myModule(nn.Module):
         return output
 
 weight_list = []
+
+train_loss_list, test_loss_list = [], []
+
+train_acc_list, test_acc_list = [], []
+
 loss = torch.nn.CrossEntropyLoss()
 
 for model_num in range(model_number):
     print("Model", model_num+1, "\b, batch size = ", batch[model_num])
     
-    dataloader = torch.utils.data.DataLoader(dataset = dataset, batch_size = batch[model_num], shuffle = True)
+    train_dataloader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size = batch[model_num], shuffle = True)
     test_dataloader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = batch[model_num], shuffle = True)
 
     model = myModule(784, batch[model_num])
@@ -70,7 +75,7 @@ for model_num in range(model_number):
         print("\tEpoch", epoch_num+1, end = '\t')
         epoch_loss = 0
         epoch_acc = 0
-        for x, y in dataloader:
+        for x, y in train_dataloader:
             y_pred = model.forward(x)
             ans = y_pred.argmax(dim=1)
            
@@ -83,58 +88,54 @@ for model_num in range(model_number):
             optimizer.step()
             optimizer.zero_grad()
             
-        print("\b\t\tloss: ",epoch_loss/ (len(x_train)/batch[model_num]), end='\t' )
+        print("\b\tloss: ",epoch_loss/ (len(x_train)/batch[model_num]), end='\t' )
         print("acc: ",epoch_acc/ (len(x_train)/batch[model_num]))
     
     weight_list.append(model.state_dict())
-'''
-train_loss_list = []
-train_acc_list = []
-test_loss_list = []
-test_acc_list = []
-dataloader = torch.utils.data.DataLoader(dataset = dataset, batch_size = 32, shuffle = True)
-test_dataloader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = 32, shuffle = True)
 
-
-for alpha in interpolation_factor:
-    new_weight = collections.OrderedDict()
-    for keys in weight_list[0].keys():
-        new_weight[keys] = weight_list[0][keys]*alpha + weight_list[1][keys]*(1-alpha)
-    new_model = myModule(784, None)
-    new_model.load_state_dict(new_weight)
-    
     train_loss = 0
     train_acc = 0
-    for x, y in dataloader:
-        y_pred = new_model(x)
+    for x, y in train_dataloader:
+        y_pred = model(x)
         train_loss += loss(y_pred, y).item()
         ans = y_pred.argmax(dim=1)
-        train_acc += torch.sum(torch.eq(y, ans), dim=0).item() / 32
-    train_acc /= (len(x_train) / 32)
-    train_loss /= (len(x_train) / 32)
+        train_acc += torch.sum(torch.eq(y, ans), dim=0).item() / batch[model_num]
+    train_acc /= (len(x_train) / batch[model_num])
+    train_loss /= (len(x_train) / batch[model_num])
     train_loss_list.append(train_loss)
     train_acc_list.append(train_acc)
     
     test_loss = 0
     test_acc = 0
     for x, y in test_dataloader:
-        y_pred = new_model(x)
+        y_pred = model(x)
         test_loss += loss(y_pred, y).item()
         ans = y_pred.argmax(dim=1)
-        test_acc += torch.sum(torch.eq(y, ans), dim=0).item() / 32
-    test_acc /= (len(x_test)/32)
-    test_loss /= (len(x_test)/32)
+        test_acc += torch.sum(torch.eq(y, ans), dim=0).item() / batch[model_num]
+    test_acc /= (len(x_test)/batch[model_num])
+    test_loss /= (len(x_test)/batch[model_num])
     test_loss_list.append(test_loss)
     test_acc_list.append(test_acc)
+    
+    
+    '''
+        new_weight = collections.OrderedDict()
+    for keys in weight_list[0].keys():
+        new_weight[keys] = weight_list[0][keys]*alpha + weight_list[1][keys]*(1-alpha)
+    new_model = myModule(784, None)
+    new_model.load_state_dict(new_weight)
+    '''
+
+
 
 print("Start plotting")
 figure, axes = plt.subplots()
 axes2 = axes.twinx()
-axes.plot(interpolation_factor, train_loss_list, 'r-', label = "train")
-axes.plot(interpolation_factor, test_loss_list, 'r--', label = "test")
-axes2.plot(interpolation_factor, train_acc_list, 'b-', label = "train")
-axes2.plot(interpolation_factor, test_acc_list, 'b--', label = "test")
-axes.set_xlabel("interpolation factor", fontsize = 16)
+axes.plot(batch, train_loss_list, 'r-', label = "train")
+axes.plot(batch, test_loss_list, 'r--', label = "test")
+axes2.plot(batch, train_acc_list, 'b-', label = "train")
+axes2.plot(batch, test_acc_list, 'b--', label = "test")
+axes.set_xlabel("batch_size", fontsize = 16)
 axes.set_ylabel("cross_entropy", fontsize = 16, color = 'r')
 axes2.set_ylabel("acc", fontsize = 16, color = 'b')
 plt.legend(loc = 'upper right', fontsize=16)
