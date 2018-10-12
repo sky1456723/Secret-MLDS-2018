@@ -54,11 +54,13 @@ class myModule(nn.Module):
         output = self.activation2(out4)
         return output
 
-weight_list = []
+
 
 train_loss_list, test_loss_list = [], []
 
 train_acc_list, test_acc_list = [], []
+
+sharpness_list = []
 
 loss = torch.nn.CrossEntropyLoss()
 
@@ -91,8 +93,8 @@ for model_num in range(model_number):
             
         print("\b\tloss: ",epoch_loss/ (len(x_train)/batch[model_num]), end='\t' )
         print("acc: ",epoch_acc/ (len(x_train)/batch[model_num]))
-    
-    weight_list.append(model.state_dict())
+
+    weight = model.state_dict()
 
     train_loss = 0
     train_acc = 0
@@ -119,15 +121,49 @@ for model_num in range(model_number):
     test_acc_list.append(test_acc)
     
     
-    '''
-        new_weight = collections.OrderedDict()
-    for keys in weight_list[0].keys():
-        new_weight[keys] = weight_list[0][keys]*alpha + weight_list[1][keys]*(1-alpha)
-    new_model = myModule(784, None)
-    new_model.load_state_dict(new_weight)
-    '''
 
-sharpness_list = batch
+
+    
+    epsilon = 1e-4
+    train_acc_s, train_loss_s = train_acc, train_loss
+    train_loss0 = train_loss
+    
+    samples = []
+    for w in weight:
+        dims = weight[w].size()
+        w_ = torch.zeros_like(weight[w]).reshape(-1,1)
+        for t in range(len(w_))[:100]:
+            wi = weight.copy()
+            _ = w_.clone()
+            _[t] += epsilon
+            
+            wi[w] = weight[w] + _.reshape(dims)
+            samples.append(wi)
+            
+            
+    for j in samples:
+        new_model = myModule(784, None)
+        new_model.load_state_dict(j)
+
+        samp_loss, samp_acc = 0, 0
+    
+        for x, y in train_dataloader:
+            y_pred = new_model(x)
+            train_loss_s += loss(y_pred, y).item()
+            ans = y_pred.argmax(dim=1)
+            train_acc += torch.sum(torch.eq(y, ans), dim=0).item() / batch[model_num]
+        train_acc_s /= (len(x_train) / batch[model_num])
+        train_loss_s /= (len(x_train) / batch[model_num])
+        
+        if train_loss_s > train_loss0:
+            train_loss0 = train_loss_s
+    
+    sharpness = (train_loss0 - train_loss) / (1 + train_loss)
+    sharpness_list.append(sharpness)
+    
+
+    
+
 
 print("Start plotting")
 figure, axes = plt.subplots()
