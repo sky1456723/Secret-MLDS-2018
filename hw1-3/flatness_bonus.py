@@ -65,7 +65,7 @@ sharpness_list = []
 loss = torch.nn.CrossEntropyLoss()
 
 for model_num in range(model_number):
-    print("Model", model_num+1, "\b, batch size = ", batch[model_num])
+    print("Model", model_num+1, ", batch size = ", batch[model_num])
     
     train_dataloader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size = batch[model_num], shuffle = True)
     test_dataloader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = batch[model_num], shuffle = True)
@@ -91,7 +91,7 @@ for model_num in range(model_number):
             optimizer.step()
             optimizer.zero_grad()
             
-        print("\b\tloss: ",epoch_loss/ (len(x_train)/batch[model_num]), end='\t' )
+        print("\tloss: ",epoch_loss/ (len(x_train)/batch[model_num]), end='\t' )
         print("acc: ",epoch_acc/ (len(x_train)/batch[model_num]))
 
     weight = model.state_dict()
@@ -127,7 +127,7 @@ for model_num in range(model_number):
     epsilon = 1e-4
     train_acc_s, train_loss_s = train_acc, train_loss
     train_loss0 = train_loss
-    
+    print("calculating sharpness")
     samples = []
     for w in weight:
         dims = weight[w].size()
@@ -139,6 +139,7 @@ for model_num in range(model_number):
             
             wi[w] = weight[w] + _.reshape(dims)
             samples.append(wi)
+        print('.', end = '')
             
             
     for j in samples:
@@ -157,7 +158,8 @@ for model_num in range(model_number):
         
         if train_loss_s > train_loss0:
             train_loss0 = train_loss_s
-    
+        print('.', end = '')
+        
     sharpness = (train_loss0 - train_loss) / (1 + train_loss)
     sharpness_list.append(sharpness)
     
