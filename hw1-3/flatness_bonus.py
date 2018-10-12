@@ -21,7 +21,7 @@ mnist = tf.keras.datasets.mnist
 x_train = np.reshape(x_train, (-1,784)) / 255
 x_test = np.reshape(x_test, (-1,784)) / 255
 #batch = range(1000, 10000, 1000)'
-batch = [pow(10, i) for i in range(1, 11)]
+batch = [int(pow(1.8, i)) for i in range(6, 16)]
 epoch = 20
 model_number = len(batch)
 
@@ -119,10 +119,11 @@ for model_num in range(model_number):
     train_loss0 = train_loss
     print("calculating sharpness")
     samples = []
+    get_samples_n = 20
     for w in weight:
         dims = weight[w].size()
         w_ = torch.zeros_like(weight[w]).reshape(-1,1)
-        for t in range(len(w_))[:200]:
+        for t in range(len(w_))[:get_samples_n]:
             wi = weight.copy()
             _ = w_.clone()
             _[t] += epsilon
@@ -131,7 +132,8 @@ for model_num in range(model_number):
             samples.append(wi)
 
     tries = 0
-    for j in samples[:400]:
+    sample_n = 10
+    for j in samples[:sample_n]:
         new_model = myModule(784, None)
         new_model.load_state_dict(j)
 
@@ -146,7 +148,7 @@ for model_num in range(model_number):
         train_loss_s /= (len(x_train) / batch[model_num])
         
         if train_loss_s > train_loss0:
-            print('max(L(theta\')) = ', train_loss_s, 'so far', tries, '/ 200')
+            print('max(L(theta\')) = ', train_loss_s, 'so far', tries, '/', sample_n)
             train_loss0 = train_loss_s
         tries += 1
 
@@ -180,6 +182,7 @@ axes.set_xlabel("batch_size", fontsize = 16)
 axes.set_xscale('log')
 axes.set_ylabel("acc", fontsize = 16, color = 'b')
 axes2.set_ylabel("sharpness", fontsize = 16, color = 'r')
+axes2.set_yscale('log')
 plt.legend(loc = 'upper right', fontsize=16)
 plt.savefig("flatness_bonus_2.png")
 plt.show()
