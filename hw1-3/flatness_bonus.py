@@ -8,7 +8,6 @@ Created on Thu Oct 11 17:56:16 2018
 
 import tensorflow as tf
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import torch
 import torch.utils.data
@@ -22,8 +21,8 @@ mnist = tf.keras.datasets.mnist
 x_train = np.reshape(x_train, (-1,784)) / 255
 x_test = np.reshape(x_test, (-1,784)) / 255
 #batch = range(1000, 10000, 1000)'
-batch = [pow(10, i) for i in range(2, 7)]
-epoch = 4
+batch = [pow(10, i) for i in range(1, 11)]
+epoch = 20
 model_number = len(batch)
 
 tensor_train_x = torch.Tensor(x_train)
@@ -54,12 +53,8 @@ class myModule(nn.Module):
         output = self.activation2(out4)
         return output
 
-
-
 train_loss_list, test_loss_list = [], []
-
 train_acc_list, test_acc_list = [], []
-
 sharpness_list = []
 
 loss = torch.nn.CrossEntropyLoss()
@@ -83,7 +78,6 @@ for model_num in range(model_number):
             ans = y_pred.argmax(dim=1)
            
             cross_entropy = loss(y_pred, y)
-            
             epoch_loss += cross_entropy.item()
             
             epoch_acc += torch.sum(torch.eq(y, ans), dim =0).item() / batch[model_num]
@@ -120,10 +114,6 @@ for model_num in range(model_number):
     test_loss_list.append(test_loss)
     test_acc_list.append(test_acc)
     
-    
-
-
-    
     epsilon = 1e-4
     train_acc_s, train_loss_s = train_acc, train_loss
     train_loss0 = train_loss
@@ -132,17 +122,16 @@ for model_num in range(model_number):
     for w in weight:
         dims = weight[w].size()
         w_ = torch.zeros_like(weight[w]).reshape(-1,1)
-        for t in range(len(w_))[:100]:
+        for t in range(len(w_))[:200]:
             wi = weight.copy()
             _ = w_.clone()
             _[t] += epsilon
             
             wi[w] = weight[w] + _.reshape(dims)
             samples.append(wi)
-  
-            
+
     tries = 0
-    for j in samples[:200]:
+    for j in samples[:400]:
         new_model = myModule(784, None)
         new_model.load_state_dict(j)
 
@@ -156,18 +145,14 @@ for model_num in range(model_number):
         train_acc_s /= (len(x_train) / batch[model_num])
         train_loss_s /= (len(x_train) / batch[model_num])
         
-        
         if train_loss_s > train_loss0:
             print('max(L(theta\')) = ', train_loss_s, 'so far', tries, '/ 200')
             train_loss0 = train_loss_s
         tries += 1
-        
+
     sharpness = (train_loss0 - train_loss) / (1 + train_loss)
     print('\t\tsharpness = ', sharpness)
     sharpness_list.append(sharpness)
-    
-
-    
 
 
 print("Start plotting")
@@ -182,7 +167,7 @@ axes.set_xscale('log')
 axes.set_ylabel("cross_entropy", fontsize = 16, color = 'b')
 axes2.set_ylabel("sharpness", fontsize = 16, color = 'r')
 plt.legend(loc = 'upper right', fontsize=16)
-plt.savefig("flatness1.png")
+plt.savefig("flatness_bonus_1.png")
 plt.show()
 
 figure, axes = plt.subplots()
@@ -196,6 +181,5 @@ axes.set_xscale('log')
 axes.set_ylabel("acc", fontsize = 16, color = 'b')
 axes2.set_ylabel("sharpness", fontsize = 16, color = 'r')
 plt.legend(loc = 'upper right', fontsize=16)
-plt.savefig("flatness2.png")
+plt.savefig("flatness_bonus_2.png")
 plt.show()
-#'''
