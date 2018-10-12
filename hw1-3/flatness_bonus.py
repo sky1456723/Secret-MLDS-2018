@@ -139,10 +139,10 @@ for model_num in range(model_number):
             
             wi[w] = weight[w] + _.reshape(dims)
             samples.append(wi)
-        print('.', end = '')
+  
             
-            
-    for j in samples:
+    tries = 0
+    for j in samples[:200]:
         new_model = myModule(784, None)
         new_model.load_state_dict(j)
 
@@ -156,11 +156,14 @@ for model_num in range(model_number):
         train_acc_s /= (len(x_train) / batch[model_num])
         train_loss_s /= (len(x_train) / batch[model_num])
         
+        
         if train_loss_s > train_loss0:
+            print('max(L(theta\')) = ', train_loss_s, 'so far', tries, '/ 200')
             train_loss0 = train_loss_s
-        print('.', end = '')
+        tries += 1
         
     sharpness = (train_loss0 - train_loss) / (1 + train_loss)
+    print('\t\tsharpness = ', sharpness)
     sharpness_list.append(sharpness)
     
 
