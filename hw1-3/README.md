@@ -21,6 +21,16 @@ Finished training 20 epochs.
 5.6309 minutes elapsed.
 ```
 
+# subtask2.py
+## Environment
+Python 3.6 and PyTorch 0.4.1 are recommended.
+## Execution
+```
+$ python3 subtask2.py
+```
+
+A picture named "Loss.png" and a picture named "accuracy.png" are created after execution.
+
 # flatness1.py
 ## Environment
 Python 3.6 and PyTorch 0.4.1 are recommended.
@@ -42,8 +52,22 @@ Python 3.6 and PyTorch 0.4.1 are recommended.
 $ python3 flatness2.py
 ```
 ## Outcome
-This program will downloads CIFAR-10 dataset, and trains five models with different bathc size.
+This program will downloads CIFAR-10 dataset, and trains five models with different batch size.
 
 Final results will be shew on the terminal and save as "sensitivity_loss.png" and "sensitivity_acc.png"
+
+This program requires more time to run.
+
+# flatness_bonus.py
+## Environment
+Python 3.6 and PyTorch 0.4.1 are recommended.
+## Execution
+```
+$ python3 flatness_bonus.py
+```
+## Outcome
+This program will downloads MNIST dataset, and trains the same model with ten different batch size.
+
+Final results will be shew on the terminal and save as "flatness_bonus_1.png" and "flatness_bonus_2.png"
 
 This program requires more time to run.
