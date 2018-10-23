@@ -34,8 +34,7 @@ def generate_dataloader(directory = "./MLDS_hw2_1_data/", batch_size = 64):
     with open(data_direc + "training_label.json", "r") as f_train:
         train_labels = json.loads(f_train.read())
         for i in train_labels:
-            train_feat_dict[ i['id'] ] = np.fromfile(data_direc + 'training_data/feat/' + i['id'] + '.npy')[-80*4096:].reshape(80,4096)
-    
+            train_feat_dict[ i['id'] ] = np.load(data_direc + 'training_data/feat/' + i['id'] + '.npy')
     #train_labels = train_labels[:len(train_labels)//100]
             
     # Testing part
@@ -43,7 +42,7 @@ def generate_dataloader(directory = "./MLDS_hw2_1_data/", batch_size = 64):
     with open(data_direc + "testing_label.json", "r") as f_test:
         test_labels = json.loads(f_test.read())
         for i in test_labels:
-            test_feat_dict[ i['id'] ] = np.fromfile(data_direc + 'testing_data/feat/' + i['id'] + '.npy')[-80*4096:].reshape(80,4096)
+            test_feat_dict[ i['id'] ] = np.load(data_direc + 'training_data/feat/' + i['id'] + '.npy')
     
     ###Build word dictionary and pop some words
     word_dict = {}
