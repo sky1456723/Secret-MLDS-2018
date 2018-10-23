@@ -23,7 +23,7 @@ decoder_layer = 1
 output_dim = 10
 
 
-dataloader, one_hot_size = read.generate_dataloader(batch_size = batch_size)
+dataloader, one_hot_size, answer_len = read.generate_dataloader(batch_size = batch_size)
 
 
 
