@@ -36,7 +36,7 @@ def generate_dataloader(directory = "./MLDS_hw2_1_data/", batch_size = 64):
         for i in train_labels:
             train_feat_dict[ i['id'] ] = np.fromfile(data_direc + 'training_data/feat/' + i['id'] + '.npy')[-80*4096:].reshape(80,4096)
     
-    train_labels = train_labels[:len(train_labels)//100]
+    #train_labels = train_labels[:len(train_labels)//100]
             
     # Testing part
     test_labels, test_feat_dict = [], {}
