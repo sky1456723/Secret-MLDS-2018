@@ -92,7 +92,7 @@ def restore_model(model_name):
 
 history = training(input_size=input_size, batch_size=batch_size, encoder_hidden=encoder_hidden,
                    decoder_hidden=decoder_hidden, encoder_layer=encoder_layer, decoder_layer=decoder_layer,
-                   output_dim=one_hot_size, cuda_avilabel=True, lamda=lamda,dataloader)
+                   output_dim=one_hot_size, cuda_avilabel=True, lamda=lamda,training_data=dataloader)
 #model_name = 's2vt.pkl'
 #restored_net = restore_model(model_name)
 
