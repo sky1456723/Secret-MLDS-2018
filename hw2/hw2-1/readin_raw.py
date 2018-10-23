@@ -36,7 +36,7 @@ def generate_dataloader(directory = "./MLDS_hw2_1_data/", batch_size = 64):
         for i in train_labels:
             train_feat_dict[ i['id'] ] = np.fromfile(data_direc + 'training_data/feat/' + i['id'] + '.npy')[-80*4096:].reshape(80,4096)
     
-    #train_labels = train_labels[:len(train_labels)//100]
+    train_labels = train_labels[:len(train_labels)//100]
             
     # Testing part
     test_labels, test_feat_dict = [], {}
@@ -113,7 +113,7 @@ def generate_dataloader(directory = "./MLDS_hw2_1_data/", batch_size = 64):
     train_y = np.array(train_y)
     sentence_len = np.array(np.reshape(sentence_len, (-1,1)))
     tensor_train_x = torch.Tensor(train_x)
-    tensor_train_y = torch.LongTensor(train_y)
+    tensor_train_y = torch.Tensor(train_y)
     tensor_seq_len = torch.LongTensor(sentence_len)
     
     dataset = torch.utils.data.TensorDataset(tensor_train_x, tensor_train_y, tensor_seq_len)
