@@ -9,14 +9,12 @@ import numpy as np
 ## S2VT padding_tag to cuda()
 
 ### training data ###
-test_input = [ torch.Tensor(np.random.randn(10,1,4096)) for i in range(5)]
-test_pad = [torch.Tensor(np.zeros( (10,1,4096) )) for i in range(5)]
-test_ans = [torch.Tensor(np.zeros( (10,1,10) )) for i in range(5)]
-test_correct_answer = [torch.ones((10,1,1), dtype=torch.long) for i in range(5)]
+# test_input = [ torch.Tensor(np.random.randn(10,1,4096)) for i in range(5)]
+# test_pad = [torch.Tensor(np.zeros( (10,1,4096) )) for i in range(5)]
+# test_ans = [torch.Tensor(np.zeros( (10,1,10) )) for i in range(5)]
+# test_correct_answer = [torch.ones((10,1,1), dtype=torch.long) for i in range(5)]
 
-
-
-batch_size = 64
+batch_size = 32
 dataloader, one_hot_size, answer_len = read.generate_dataloader(batch_size = batch_size)
 
 input_size = 4096
@@ -95,12 +93,3 @@ history = training(input_size=input_size, batch_size=batch_size, encoder_hidden=
                    output_dim=one_hot_size, cuda_avilabel=True, lamda=lamda,training_data=dataloader)
 #model_name = 's2vt.pkl'
 #restored_net = restore_model(model_name)
-
-
-
-
-
-
-
-
-
