@@ -123,7 +123,7 @@ class S2VT(torch.nn.Module):
             self.encoder(input_data, (self.encoder_h, self.encoder_c))
 
         padding_tag = torch.zeros((len(input_data), self.batch_size, self.decoder_h_size),
-                                  dtype=torch.float32)
+                                  dtype=torch.float32).cuda()
 
         decoder_input = torch.cat((encoded_sequence, padding_tag), dim = 2)
         decoder_output, (decoder_h, decoder_c) = \
@@ -132,8 +132,8 @@ class S2VT(torch.nn.Module):
         print("Decoding")
         decoder_output_words = []
         bos_tag = torch.zeros((1, self.batch_size, self.one_hot_size),
-                                  dtype= torch.float32)
-
+                                  dtype= torch.float32).cuda()
+        bos_tag[:,:,-2] = 1
         padding_input = torch.zeros((len(encoded_sequence), self.batch_size, self.encoder_input_size),
                                     dtype=torch.float32)
 

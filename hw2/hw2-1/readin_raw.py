@@ -117,7 +117,7 @@ def generate_dataloader(directory = "./MLDS_hw2_1_data/", batch_size = 64):
     
     dataset = torch.utils.data.TensorDataset(tensor_train_x, tensor_train_y, tensor_seq_len)
     dataloader = torch.utils.data.DataLoader(dataset = dataset, batch_size = batch_size, shuffle=True)
-    return dataloader
+    return dataloader, one_hot_len
     
 
 
