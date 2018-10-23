@@ -14,28 +14,27 @@ test_pad = [torch.Tensor(np.zeros( (10,1,4096) )) for i in range(5)]
 test_ans = [torch.Tensor(np.zeros( (10,1,10) )) for i in range(5)]
 test_correct_answer = [torch.ones((10,1,1), dtype=torch.long) for i in range(5)]
 
-input_size = 4096
+
+
 batch_size = 64
+dataloader, one_hot_size, answer_len = read.generate_dataloader(batch_size = batch_size)
+
+input_size = 4096
 encoder_hidden = 256
 decoder_hidden = 256
 encoder_layer = 1
 decoder_layer = 1
-output_dim = 10
-
-
-dataloader, one_hot_size, answer_len = read.generate_dataloader(batch_size = batch_size)
-
-
+output_dim = one_hot_size
 
 
 learning_rate = 0.001
-training_epoch = 1
-cuda_avilabel = False
+training_epoch = 200
+cuda_avilabel = True
 # we can change the schedule sampling rate by parameter lamda; the first 100 epochs set the rate to 1
 lamda = 0.98
 
 # we can get a 's2vt.plk' file which contains the model for restoring after we call training()
-def training(input_size,batch_size,encoder_hidden,decoder_hidden,encoder_layer,decoder_layer,output_dim,cuda_avilabel,lamda):
+def training(input_size,batch_size,encoder_hidden,decoder_hidden,encoder_layer,decoder_layer,output_dim,cuda_avilabel,lamda,training_data):
 	model = S2VT(input_size,batch_size,encoder_hidden,decoder_hidden,encoder_layer,decoder_layer,output_dim)
 	if(cuda_avilabel):
 		model = model.cuda()
@@ -45,12 +44,12 @@ def training(input_size,batch_size,encoder_hidden,decoder_hidden,encoder_layer,d
 	loss_array = []
 
 	for epoch in range(training_epoch):
-	    for iteration in range(len(test_input)):
+	    for x,y,z in training_data:
 	        model.encoder_stage = True
 	        model.decoder_stage = False
-	        encoder_input = test_input[iteration]  # the input to encoder during encoding stage
-	        correct_answer = test_ans[iteration]   # correct answer 
-	        encoder_pad = test_pad[iteration]      # the input to encoder during decoding stage
+	        encoder_input = x  # the input to encoder during encoding stage
+	        correct_answer = y   # correct answer 
+	        encoder_pad = torch.zeros((correct_answer[0],correct_answer[1],input_size),dtype = torch.float)       # the input to encoder during decoding stage
 	        _, target = correct_answer.max(dim=2)  # not one-hot, but a number imply the right class
 	        if(cuda_avilabel):
 	        	encoder_input = encoder_input.cuda()
@@ -93,7 +92,7 @@ def restore_model(model_name):
 
 history = training(input_size=input_size, batch_size=batch_size, encoder_hidden=encoder_hidden,
                    decoder_hidden=decoder_hidden, encoder_layer=encoder_layer, decoder_layer=decoder_layer,
-                   output_dim=one_hot_size, cuda_avilabel=True, lamda=lamda)
+                   output_dim=one_hot_size, cuda_avilabel=True, lamda=lamda,dataloader)
 #model_name = 's2vt.pkl'
 #restored_net = restore_model(model_name)
 
