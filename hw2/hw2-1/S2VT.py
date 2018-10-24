@@ -79,13 +79,13 @@ class S2VT(torch.nn.Module):
         ### SUBMODULES ###
         # shape = (num_layer, batch, hidden_size)
         self.encoder_h = torch.zeros((encoder_layer, batch, encoder_unit),
-                                      dtype = torch.float32)
+                                      dtype = torch.float32).cuda()
         self.encoder_c = torch.zeros((encoder_layer, batch, encoder_unit),
-                                      dtype = torch.float32)
+                                      dtype = torch.float32).cuda()
         self.decoder_h = torch.zeros((decoder_layer, batch, decoder_unit),
-                                      dtype = torch.float32)
+                                      dtype = torch.float32).cuda()
         self.decoder_c = torch.zeros((decoder_layer, batch, decoder_unit),
-                                      dtype = torch.float32)
+                                      dtype = torch.float32).cuda()
 
         self.encoder = torch.nn.LSTM(input_size = self.encoder_input_size,
                                      hidden_size = encoder_unit,
@@ -107,7 +107,7 @@ class S2VT(torch.nn.Module):
                               max=10,
                               p=one_hot)
 
-    def forward(self, input_data, correct_answer):
+    def forward(self, input_data, correct_answer, max_len, real_ans_length):
         # correct_answer : whole sequence of answer
         # input_data shape: (sequence_len, batch, input_size)
         # encoded_sequence shape: (sequence_len, batch, input_size)
@@ -119,7 +119,7 @@ class S2VT(torch.nn.Module):
         # does nothing.
 
         print("Encoding")
-        encoded_sequence, (self.encoder_h, self.encoder_c) = \
+        encoded_sequence, (encoder_hn, encoder_cn) = \
             self.encoder(input_data, (self.encoder_h, self.encoder_c))
 
         padding_tag = torch.zeros((len(input_data), self.batch_size, self.decoder_h_size),
@@ -134,12 +134,12 @@ class S2VT(torch.nn.Module):
         bos_tag = torch.zeros((1, self.batch_size, self.one_hot_size),
                                   dtype= torch.float32).cuda()
         bos_tag[:,:,-2] = 1
-        padding_input = torch.zeros((len(encoded_sequence), self.batch_size, self.encoder_input_size),
-                                    dtype=torch.float32)
+        padding_input = torch.zeros((max_len, self.batch_size, self.encoder_input_size),
+                                    dtype=torch.float32).cuda()
 
-        encoded_padding, (self.encoder_h, self.encoder_c) = self.encoder(padding_input, (self.encoder_h, self.encoder_c))
+        encoded_padding, (encoder_hn, encoder_cn) = self.encoder(padding_input, (encoder_hn, encoder_cn))
 
-        for time in range(len(encoded_sequence)):
+        for time in range(max_len):
             if time == 0:
                 # sample a <bos> at first time step
                 bos_embedding = self.input_embedding(bos_tag)
@@ -158,19 +158,20 @@ class S2VT(torch.nn.Module):
                     else sample
 
             decoder_input = torch.cat((context, (encoded_padding[time]).unsqueeze(0)), dim = 2)
-            decoder_output, (self.decoder_h, self.decoder_c) = \
-                self.decoder(decoder_input, (self.decoder_h, self.decoder_c))
+            decoder_output, (decoder_h, decoder_c) = \
+                self.decoder(decoder_input, (decoder_h, decoder_c))
 
             word = self.output_embedding(decoder_output).squeeze(0)
             # word is of shape (batch_size, one_hot_size)
             decoder_output_words.append(word)
-
+            
         return decoder_output_words
 
-
+'''
 test_input = [ torch.Tensor(np.random.randn(10,1,4096)) for i in range(5)]
 test_pad = [torch.Tensor(np.zeros( (10,1,4096) )) for i in range(5)]
 test_ans = [torch.Tensor(np.zeros( (10,1,10) )) for i in range(5)]
 test = S2VT(4096, 1, 256, 256, 1, 1, 10, use_attention=True)
 ans = test(test_input[0], test_ans[0])
 print(ans)
+'''
