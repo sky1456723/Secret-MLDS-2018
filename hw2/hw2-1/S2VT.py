@@ -17,11 +17,11 @@ class Attention(torch.nn.Module):
     # e_u: units of encoder, thus hidden of encoder = (e_l, b, e_u) assuming one direction lstm
     # max: maximum sequence length, defaults to 1024
     # p: word size, thus prediction of decoder at one time step = (b, p)
-    def __init__ (self, e_l, e_u, d_l, d_u, b, max, p):
+    def __init__ (self, e_l, e_u, d_l, d_u, b, p):
         super(Attention, self).__init__()
 
         self.dropout = torch.nn.Dropout(0.2)
-        self.linear_l1du_max = torch.nn.Linear((d_l + 1) * d_u, max)
+        self.linear_l1du_inputlen = torch.nn.Linear((d_l + 1) * d_u, 80)
         self.linear_2du_du = torch.nn.Linear(2 * d_u, d_u)
         self.softmax = torch.nn.Softmax(dim=1)
         self.relu = torch.nn.PReLU(num_parameters=d_l)
@@ -33,6 +33,9 @@ class Attention(torch.nn.Module):
 
     def bvm(self, BS, SBH):
         # eliminate S from both tensors, returns LBH
+        assert BS.shape[1] == SBH.shape[0], 'Sequence length mismatch: received tensors of size {} and {}'.\
+            format(BS.shape, SBH.shape)
+
         B1S = BS.unsqueeze(1)
         BSH = SBH.transpose(0, 1)
         B1H = torch.bmm(B1S, BSH)
@@ -49,7 +52,7 @@ class Attention(torch.nn.Module):
         for _ in range (h.shape[0] - 1):
             i = self.concat(i, h[_ + 1])
         a = self.concat(i, word.squeeze(0))         # (batch, (layer + 1)*units)
-        w = self.softmax(self.linear_l1du_max(a))   # (batch, max)
+        w = self.softmax(self.linear_l1du_inputlen(a))   # (batch, max)
         f = self.bvm(w, E)                          # (batch, units)
         c = self.concat(word.squeeze(0), f)         # (batch, 2*units)
         o = self.relu(self.linear_2du_du(c))        # (batch, units)
@@ -71,6 +74,7 @@ class S2VT(torch.nn.Module):
         self.decoder_input_size = (decoder_unit + encoder_unit)
         self.encoder_layer = encoder_layer
         self.decoder_layer = decoder_layer
+        self.output_softmax = torch.nn.Softmax(dim=1)
         self.use_attention = use_attention
 
         #Need to change this ratio by model.schedule_sample_rate
@@ -104,11 +108,74 @@ class S2VT(torch.nn.Module):
                               d_l=decoder_layer,
                               d_u=decoder_unit,
                               b=batch,
-                              max=10,
                               p=one_hot)
 
     def forward(self, input_data, correct_answer, max_len, real_ans_length):
         # correct_answer : whole sequence of answer
+        # input_data shape: (sequence_len, batch, input_size)
+        # encoded_sequence shape: (sequence_len, batch, input_size)
+        # First the encoder is fed with input sequence, then
+        # the decoder is fed with one word from the result
+        # sequence of encoder at a step.
+        # When the encoder is receiving the sequence, the decoder also
+        # receives its output; when the decoder is decoding, the encoder
+        # does nothing.
+
+        #print("Encoding")
+        encoded_sequence, (encoder_hn, encoder_cn) = \
+            self.encoder(input_data, (self.encoder_h, self.encoder_c))
+
+        padding_tag = torch.zeros((len(input_data), self.batch_size, self.decoder_h_size),
+                                  dtype=torch.float32).cuda()
+
+        decoder_input = torch.cat((encoded_sequence, padding_tag), dim = 2)
+        decoder_output, (decoder_hn, decoder_cn) = \
+            self.decoder(decoder_input, (self.decoder_h, self.decoder_c))
+
+        #print("Decoding")
+        decoder_output_words = []
+        bos_tag = torch.zeros((1, self.batch_size, self.one_hot_size),
+                                  dtype= torch.float32).cuda()
+        bos_tag[:,:,-2] = 1
+        padding_input = torch.zeros((max_len, self.batch_size, self.encoder_input_size),
+                                    dtype=torch.float32).cuda()
+
+        encoded_padding, (encoder_hn, encoder_cn) = self.encoder(padding_input, (encoder_hn, encoder_cn))
+
+        for time in range(max_len):
+            context = None
+            sample = None
+            if time == 0:
+                # sample a <bos> at first time step
+                bos_embedding = self.input_embedding(bos_tag)
+                sample = bos_embedding
+                context = self.attn(decoder_hn, sample, encoded_sequence)  + (encoded_padding[time]).unsqueeze(0) if self.use_attention \
+                    else  (encoded_padding[time]).unsqueeze(0)
+
+            else:
+                #some change by Wei-Tsung
+                # time > 0
+                # randomly choose previous prediction or correct answer as input
+                sample = self.input_embedding(correct_answer[time].unsqueeze(0)) \
+                    if np.random.random() < self.schedule_sample_rate \
+                    else decoder_output
+
+                # process sample with attention
+                context = self.attn(decoder_hn, sample, encoded_sequence) + (encoded_padding[time]).unsqueeze(0) if self.use_attention \
+                    else (encoded_padding[time]).unsqueeze(0)
+
+            decoder_input = torch.cat((sample, context), dim = 2)
+            decoder_output, (decoder_hn, decoder_cn) = \
+                self.decoder(decoder_input, (decoder_hn, decoder_cn))
+
+            word = self.output_embedding(decoder_output).squeeze(0)
+            
+            # word is of shape (batch_size, one_hot_size)
+            decoder_output_words.append(word)
+            
+        return decoder_output_words
+    
+    def test(self, input_data, max_len):
         # input_data shape: (sequence_len, batch, input_size)
         # encoded_sequence shape: (sequence_len, batch, input_size)
         # First the encoder is fed with input sequence, then
@@ -126,7 +193,7 @@ class S2VT(torch.nn.Module):
                                   dtype=torch.float32).cuda()
 
         decoder_input = torch.cat((encoded_sequence, padding_tag), dim = 2)
-        decoder_output, (decoder_h, decoder_c) = \
+        decoder_output, (decoder_hn, decoder_cn) = \
             self.decoder(decoder_input, (self.decoder_h, self.decoder_c))
 
         print("Decoding")
@@ -140,38 +207,29 @@ class S2VT(torch.nn.Module):
         encoded_padding, (encoder_hn, encoder_cn) = self.encoder(padding_input, (encoder_hn, encoder_cn))
 
         for time in range(max_len):
+            context = None
+            sample = None
             if time == 0:
                 # sample a <bos> at first time step
                 bos_embedding = self.input_embedding(bos_tag)
-                context = self.attn(self.decoder_h, bos_embedding, encoded_sequence) if self.use_attention \
-                    else bos_embedding
+                sample = bos_embedding
+                context = self.attn(decoder_hn, sample, encoded_sequence)  + (encoded_padding[time]).unsqueeze(0) if self.use_attention \
+                    else  (encoded_padding[time]).unsqueeze(0)
 
             else:
-                # time > 0
-                # randomly choose previous prediction or correct answer as input
-                sample = self.input_embedding(correct_answer[time].unsqueeze(0)) \
-                    if np.random.random() < self.schedule_sample_rate \
-                    else decoder_output
+                sample = decoder_output
 
                 # process sample with attention
-                context = self.attn(self.decoder_h, sample, encoded_sequence) if self.use_attention \
-                    else sample
+                context = self.attn(decoder_hn, sample, encoded_sequence) + (encoded_padding[time]).unsqueeze(0) if self.use_attention \
+                    else (encoded_padding[time]).unsqueeze(0)
 
-            decoder_input = torch.cat((context, (encoded_padding[time]).unsqueeze(0)), dim = 2)
-            decoder_output, (decoder_h, decoder_c) = \
-                self.decoder(decoder_input, (decoder_h, decoder_c))
+            decoder_input = torch.cat((sample, context), dim = 2)
+            decoder_output, (decoder_hn, decoder_cn) = \
+                self.decoder(decoder_input, (decoder_hn, decoder_cn))
 
             word = self.output_embedding(decoder_output).squeeze(0)
+            word = self.output_softmax(word)
             # word is of shape (batch_size, one_hot_size)
             decoder_output_words.append(word)
             
         return decoder_output_words
-
-'''
-test_input = [ torch.Tensor(np.random.randn(10,1,4096)) for i in range(5)]
-test_pad = [torch.Tensor(np.zeros( (10,1,4096) )) for i in range(5)]
-test_ans = [torch.Tensor(np.zeros( (10,1,10) )) for i in range(5)]
-test = S2VT(4096, 1, 256, 256, 1, 1, 10, use_attention=True)
-ans = test(test_input[0], test_ans[0])
-print(ans)
-'''
