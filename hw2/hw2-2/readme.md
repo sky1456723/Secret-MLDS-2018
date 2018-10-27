@@ -29,3 +29,5 @@ for i, (sentence, target, act) in enumerate(train_loader):
     ...
 loss_avg = loss_sum / len(train_loader)
 ```
+
+Also, the program expects an int_to_word function.
