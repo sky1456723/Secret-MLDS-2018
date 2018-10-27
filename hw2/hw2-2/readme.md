@@ -31,3 +31,12 @@ loss_avg = loss_sum / len(train_loader)
 ```
 
 Also, the program expects an int_to_word function.
+## To use Dataloader
+Some requirement of input data type is in Data.py
+Please do something like:
+'''
+import Data
+import torch.utils.data
+dataset = Data.ChatbotDataset(data, label)
+dataloader = torch.utils.data.DataLoader(dataset = dataset, collate_fn = collate_fn, ...)
+'''
