@@ -64,7 +64,7 @@ def collate_fn(batch_data):
                 unpadded = batch_data[label_num][1]
                 batch_data[label_num][1] = np.concatenate((unpadded, pad),
                                                          axis = 0)
-        
+        batch_data.sort(key = lambda x:x[2], reverse=True)
         batch_x = [torch.Tensor(data[0]) for data in batch_data]
         batch_x = torch.stack(batch_x) #shape:(batch, seq_len, max_data_len)
         batch_y = [torch.Tensor(data[1]) for data in batch_data]
@@ -92,6 +92,7 @@ def collate_fn(batch_data):
             for i in range(max_label_len - label_len):
                 batch_data[label_num][1].append([0]*one_hot_size)
         
+        batch_data.sort(key = lambda x:x[2], reverse=True)
         batch_x = [torch.Tensor(data[0]) for data in batch_data]
         batch_x = torch.stack(batch_x) #shape:(batch, seq_len, max_data_len)
         batch_y = [torch.Tensor(data[1]) for data in batch_data]
@@ -103,7 +104,7 @@ def collate_fn(batch_data):
         return batch_x, batch_y, data_seq_len, label_seq_len
     
 ###TEST CODE###
-'''
+
 data = [np.array([[0,1],[0,2],[0,3]]), np.array([[0,4],[0,5]]),
         np.array([[0,1],[0,2],[0,3],[0,4]]), np.array([[9,9]])]
 label = [np.array([[0,0,0,0,1],[0,0,0,0,2],[0,0,0,0,3],[0,0,0,0,4]]),
@@ -120,8 +121,11 @@ list_label = [ [[0,0,0,0,1],[0,0,0,0,2],[0,0,0,0,3],[0,0,0,0,4]],
 dataset = ChatbotDataset(data, label)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size = 3,
                                          collate_fn = collate_fn)
-for x,y,z,v in dataloader:
-    print(x.shape)
-    print(y.shape)
-'''
+for i, (x,y,z,v) in enumerate(dataloader):
+    print(i)
+    print(x)
+    print(y)
+    print(z)
+    print(v)
+
     
