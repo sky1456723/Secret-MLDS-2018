@@ -10,9 +10,18 @@ import torch.utils.data
 import numpy as np
 
 class ChatbotDataset(torch.utils.data.Dataset):
+    """
+    Expected data shape like:(data_num, data_len)
+    Data can be a list of numpy array or a list of list
+    input data shape : (data_num, seq_len, feature_dim)
+    
+    It can alse load from .npy files,
+    please set from_file to True if you use it,
+    and give the file path to data_x and data_y parameters.
+    
+    __len__ will return the # of data
+    """
     def __init__(self, data_x, data_y, from_file = False):
-        #Expected data shape like:(data_num, data_len)
-        #Can be a list of numpy array or something like this
         if from_file:
             self.data = np.load(data_x)
             self.label = np.load(data_y)
@@ -27,20 +36,40 @@ class ChatbotDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.data)
     
-#In dataloader, when we iter in it,
-#It will execute __next__ of DataLoaderIter,
-#And __next__ will call Dataset[index] (__getitem__)
-#and get #batch time to save the return in a list
+"""   
+In dataloader, when we iter in it,
+It will execute __next__ of DataLoaderIter,
+And __next__ will call Dataset[index] (__getitem__)
+and get # of batch time to save the return in a list
+"""
 def collate_fn(batch_data):
-    #batch_data should be a list of data
-    #data would be a list of [list/np.array, list/np.array,
-    #                         int, int]
-    #each list/np.array shape like : (seq_len, word_vec_size)
-    #collate_fn return: Tensor of (x, y,
-    #                              unpadded_data_seq_len,
-    #                              unpadded_label_seq_len)
-    #shape of x : (batch_size, padded_data_seq_len, word_vec_size)
-    #shape of y : (batch_size, padded_label_seq_len, one_hot_size)
+    """
+    This function will dynamically pad the sequence to the same length
+    in a batch when using dataloader,
+    and the length depends on the max sequence length in the batch.
+    
+    #It's no need to explicitly call this function. 
+    #Only put it into dataloader
+    input : batch_data should be a list of data
+    data would be a list of [list/np.array, list/np.array, int, int]
+    each list/np.array has shape like : (seq_len, word_vec_size/one_hot_size)
+    
+    return: tuple of 4 Tensor (x, y, data_seq_len, label_seq_len)
+    shape of x : (batch_size, max_data_seq_len, word_vec_size) FloatTensor
+    shape of y : (batch_size, max_label_seq_len, one_hot_size) FloatTensor
+    shape of data_seq_len : (batch_size, 1) LongTensor
+    shape of label_seq_len : (batch_size, 1) LongTensor
+    
+    x means input data, sorted by the
+    y means label
+    data_seq_len means the input data sequence length before padding
+    data_seq_len means the label sequence length before padding
+    
+    Please use this function when use dataloader. (collate_fn = collate_fn)
+    The dataloader should load ChatbotDataset. 
+    (dataset = Object of ChatbotDataset)
+    len(dataloader) will return how many batch it will generate
+    """
     data_type = str(type(batch_data[0][0]))
     if data_type == "<class 'numpy.ndarray'>":
         #padding data
@@ -66,13 +95,14 @@ def collate_fn(batch_data):
                                                          axis = 0)
         batch_data.sort(key = lambda x:x[2], reverse=True)
         batch_x = [torch.Tensor(data[0]) for data in batch_data]
-        batch_x = torch.stack(batch_x) #shape:(batch, seq_len, max_data_len)
+        batch_x = torch.stack(batch_x) 
         batch_y = [torch.Tensor(data[1]) for data in batch_data]
-        batch_y = torch.stack(batch_y) #shape:(batch, seq_len, max_label_len)
+        batch_y = torch.stack(batch_y) 
+        
         data_seq_len = [torch.Tensor([data[2]]) for data in batch_data]
         label_seq_len = [torch.Tensor([data[3]]) for data in batch_data]
-        data_seq_len = torch.stack(data_seq_len) #shape : (batch, 1)
-        label_seq_len = torch.stack(label_seq_len) #shape : (batch, 1)
+        data_seq_len = torch.stack(data_seq_len).long()    
+        label_seq_len = torch.stack(label_seq_len).long()  
         return batch_x, batch_y, data_seq_len, label_seq_len
     elif data_type == "<class 'list'>":
         #padding data
@@ -94,17 +124,18 @@ def collate_fn(batch_data):
         
         batch_data.sort(key = lambda x:x[2], reverse=True)
         batch_x = [torch.Tensor(data[0]) for data in batch_data]
-        batch_x = torch.stack(batch_x) #shape:(batch, seq_len, max_data_len)
+        batch_x = torch.stack(batch_x) 
         batch_y = [torch.Tensor(data[1]) for data in batch_data]
-        batch_y = torch.stack(batch_y) #shape:(batch, seq_len, max_label_len)
+        batch_y = torch.stack(batch_y) 
+        
         data_seq_len = [torch.Tensor([data[2]]) for data in batch_data]
         label_seq_len = [torch.Tensor([data[3]]) for data in batch_data]
-        data_seq_len = torch.stack(data_seq_len) #shape : (batch, 1)
-        label_seq_len = torch.stack(label_seq_len) #shape : (batch, 1)
+        data_seq_len = torch.stack(data_seq_len).long()    
+        label_seq_len = torch.stack(label_seq_len).long()  
         return batch_x, batch_y, data_seq_len, label_seq_len
     
 ###TEST CODE###
-
+'''
 data = [np.array([[0,1],[0,2],[0,3]]), np.array([[0,4],[0,5]]),
         np.array([[0,1],[0,2],[0,3],[0,4]]), np.array([[9,9]])]
 label = [np.array([[0,0,0,0,1],[0,0,0,0,2],[0,0,0,0,3],[0,0,0,0,4]]),
@@ -123,9 +154,10 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size = 3,
                                          collate_fn = collate_fn)
 for i, (x,y,z,v) in enumerate(dataloader):
     print(i)
-    print(x)
-    print(y)
-    print(z)
-    print(v)
-
+    print(x.shape)
+    print(y.shape)
+    print(z.shape)
+    print(v.shape)
+print(len(dataloader))
+'''
     
