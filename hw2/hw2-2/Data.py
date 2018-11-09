@@ -31,8 +31,8 @@ class ChatbotDataset(torch.utils.data.Dataset):
             self.label = data_y
     def __getitem__(self, index):
         #Process with <EOS>, length must add 1
-        data_seq_len = len(self.data[index])+1
-        label_seq_len = len(self.label[index])+1
+        data_seq_len = len(self.data[index])
+        label_seq_len = len(self.label[index])
         return [self.data[index], self.label[index],
                 data_seq_len, label_seq_len]
     def __len__(self):
