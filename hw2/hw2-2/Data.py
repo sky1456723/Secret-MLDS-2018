@@ -16,6 +16,7 @@ class ChatbotDataset(torch.utils.data.Dataset):
     input data shape : (data_num, seq_len, feature_dim)
     
     It can alse load from .npy files,
+    the file should contains array of word_vectors of several sequence,
     please set from_file to True if you use it,
     and give the file path to data_x and data_y parameters.
     
