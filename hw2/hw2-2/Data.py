@@ -56,7 +56,8 @@ def collate_fn(batch_data):
     
     return: tuple of 4 Tensor (x, y, data_seq_len, label_seq_len)
     shape of x : (batch_size, max_data_seq_len, word_vec_size) FloatTensor
-    shape of y : (batch_size, max_label_seq_len, one_hot_size) FloatTensor
+    shape of y : (batch_size, max_label_seq_len, 1) FloatTensor
+    #1 means the index in one-hot 
     shape of data_seq_len : (batch_size, 1) LongTensor
     shape of label_seq_len : (batch_size, 1) LongTensor
     
@@ -138,10 +139,10 @@ def collate_fn(batch_data):
 '''
 data = [np.array([[0,1],[0,2],[0,3]]), np.array([[0,4],[0,5]]),
         np.array([[0,1],[0,2],[0,3],[0,4]]), np.array([[9,9]])]
-label = [np.array([[0,0,0,0,1],[0,0,0,0,2],[0,0,0,0,3],[0,0,0,0,4]]),
-         np.array([[0,0,0,0,5]]),
-         np.array([[0,0,0,0,1], [0,0,0,0,2]]),
-         np.array([[0,0,0,0,3], [0,0,0,0,4],[0,0,0,0,5]])]
+label = [np.array([[1],[2],[3],[4]]),
+         np.array([[5]]),
+         np.array([[1], [2]]),
+         np.array([[3], [4],[5]])]
 
 list_data = [ [[0,1],[0,2]], [[0,3],[0,4],[0,5]],
               [[0,1],[0,2],[0,3],[0,4]], [[9,9]] ]
@@ -150,14 +151,13 @@ list_label = [ [[0,0,0,0,1],[0,0,0,0,2],[0,0,0,0,3],[0,0,0,0,4]],
                [[0,0,0,0,1], [0,0,0,0,2]],
                [[0,0,0,0,3], [0,0,0,0,4],[0,0,0,0,5]] ]
 dataset = ChatbotDataset(data, label)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size = 3,
+dataloader = torch.utils.data.DataLoader(dataset, batch_size = 4,
                                          collate_fn = collate_fn)
 for i, (x,y,z,v) in enumerate(dataloader):
     print(i)
-    print(x.shape)
-    print(y.shape)
-    print(z.shape)
-    print(v.shape)
+    print(x)
+    print(y)
+    print(z)
+    print(v)
 print(len(dataloader))
 '''
-    
