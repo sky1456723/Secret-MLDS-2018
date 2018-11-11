@@ -3,35 +3,23 @@
 This part is carried out by the file ```Chatbot_train.py```. Usage:
 
 ```
-Chatbot_train.py [-h] [--model_name MODEL_NAME]
-                 [--optim_name OPTIM_NAME] [--figure_name FIGURE_NAME]
-                 [--epoch_number EPOCH_NUMBER]
-                 [--batch_size BATCH_SIZE] [--optimizer OPTIMIZER]
-                 (--load_model | --new_model | --remove_model)
+usage: Chatbot_train.py [-h] [--model_name MODEL_NAME] [--figure_name FIGURE_NAME]
+                        [--epoch_number EPOCH_NUMBER] [--batch_size BATCH_SIZE]
+                        [--optimizer OPTIMIZER] [--word2vec WORD2VEC]
+                        [--force] (--load_model | --new_model | --remove_model)
 ```
 
-One of the three arguments ```--load_model/-l --new_model/-n --remove_model/-r``` is required. The model name defaults to ```chatbot_model_default.pkl``` and optimizer state name ```chatbot_optim_default.pkl``` unless otherwise specified by flags ```--model_name``` and ```--optim_name``` respectively. By default, this program trains the model for 5 epochs with batch size of 16 and Adam optimizer.
+One of the three arguments ```--load_model/-l --new_model/-n --remove_model/-r``` is required, all of which requires a model name to operate properly. The model name defaults to ```chatbot_model_default```, which corresponds to model file name ```chatbot_model_default.pkl``` and optimizer state file name ```chatbot_model_default_optim.pkl```. The model name can be specified by the flag ```--model_name```. 
 
-This program expects some behavior of model and dala loader:
+Users can train arbitrary number of epochs by using the flag ```--epoch/-e```.
 
-## Model
+The model also relies on a Gensim Word2Vec model with its path specified by the flag ```--word2vec```, which defaults to ```./Jeffery/word2vec_wv_Jeff.wv```.
 
-```Chatbot_train.py``` only calls ```.forward()``` and feeds the model with 1) input sentence batch, 2) target batch (for scheduled sampling), and 3) current epoch number (for scheduled sampling).
+Users can force the program to train a new model by feeding it the flag ```--force```. Beware of existing models.
 
-The program calls ```.train()``` and ```.eval()```. You can modify those functions to achieve your goals.
+Currently this program loads first 2000 entries of ```question_array1.npy``` and ```answer_array.npy```, written at line 99 and 100. May need to change this to achieve more desirable results.
 
-## Dataloader
-
-This program expects two data loaders, namely ```train_loader``` and ```test_loader```, at a call of the function ```DataLoader``` with one argument being the batch size. Both data loaders must be iterables and support ```__len__```, with ```__getitem___``` returning an input sentence batch, target batch, and actual sentence lengths. In other words, data loaders must support these syntaxes:
-
-```
-for i, (sentence, target, act) in enumerate(train_loader):
-    ...
-loss_avg = loss_sum / len(train_loader)
-```
-
-Also, the program expects an int_to_word function.
-## To use Dataloader
+# To use Dataloader
 Some requirement of input data type is in Data.py
 Please do something like:
 ```
