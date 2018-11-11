@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-USE_CUDA = torch.cuda.is_available()
-device = torch.device("cuda" if USE_CUDA else "cpu")
-print(device)
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+#print(device)
 
 '''
 my embedding is used to embed the word to hidden vector
@@ -150,7 +149,7 @@ class LuongAttnDecoderRNN(nn.Module):
         embedded = self.embedding(input_step)
         embedded = self.embedding_dropout(embedded)
         # Forward through unidirectional GRU
-        # rnn_output size: (n_layers = 1,batch_size.hidden_size)
+        # rnn_output size: (n_layers = 1,batch_size,hidden_size)
         rnn_output, hidden = self.gru(embedded, last_hidden)  
         
         # Calculate attention weights from the current GRU output
@@ -169,12 +168,12 @@ class LuongAttnDecoderRNN(nn.Module):
         concat_output = torch.tanh(self.concat(concat_input))
         # concat_output size: (batch size, hidden siez)
         output = self.out(concat_output)
-        output = F.softmax(output, dim=1)
+        #output = F.softmax(output, dim=1)
         return output, hidden
         # output size: (batch,one hot size)
         # hidden will be used as last_hidden for the next time step(for attention or as input to gru next time step)
 
-
+'''
 encoder_layer = 1
 decoder_layer = 1
 
@@ -197,3 +196,33 @@ test_de_input = torch.rand((1,3,20))
 test_de_out,test_de_next_hidden = test_decoder(test_de_input,decoder_hidden,test_en_output)
 print(test_de_out.shape)
 print(test_de_next_hidden.shape)
+'''
+
+def main():
+    ee = nn.Linear(250, hidden_size)
+    de = nn.Linear(75000, hidden_size)
+    e = EncoderRNN(hidden_size = hidden_size,
+                   embedding = ee,
+                   n_layers = 1,
+                   dropout = 0.5).to(device)
+    d = LuongAttnDecoderRNN('dot',
+                            embedding = de,
+                            hidden_size = hidden_size, 
+                            output_size = 75000,
+                            n_layers = 1).to(device)
+    print(device)
+    input = torch.randn((7, 3, 250), dtype=torch.float32).to(device)
+    # batch size = 3
+    # max len = 7
+    # feature = 250
+    input_len = torch.tensor([7, 4, 3]).to(device)
+    randn_input = torch.randn((1, 3, 75000), dtype=torch.float32).to(device)
+    encoder_output, encoder_hidden = e(input, input_len)
+    
+    decoder_output, decoder_hidden = d(randn_input, encoder_hidden[0:1], encoder_output)
+    for step in range(7 - 1):
+            decoder_output, decoder_hidden = d(decoder_output.unsqueeze(0), decoder_hidden, encoder_output)
+            print(decoder_output)
+
+if __name__ == '__main__':
+    main()
