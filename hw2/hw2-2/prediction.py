@@ -137,7 +137,7 @@ def main(arg):
             
             ### FIRST DECODER INPUT ###
             output_words = []
-            decoder_output, decoder_hidden = model.decoder(empty_input, encoder_h[0:1], encoder_outputs)
+            decoder_output, decoder_hidden = model.decoder(_input, encoder_h[0:1], encoder_outputs)
             one_hot_index = decoder_output.argmax(dim=1).item()
             output_words.append(wv.index2entity[one_hot_index])
             count_len = 1
