@@ -123,7 +123,7 @@ For the decoder, we will manually feed our batch one time step at a time.
 This means that our embedded word tensor and GRU output will both have shape (1, batch_size, hidden_size).
 '''
 class LuongAttnDecoderRNN(nn.Module):
-    def __init__(self, attn_model, embedding, hidden_size, output_size, n_layers, dropout=0.1):
+    def __init__(self, attn_model, embedding, hidden_size, output_size, n_layers, dropout=0.0):
         super(LuongAttnDecoderRNN, self).__init__()
 
         # Keep for reference
