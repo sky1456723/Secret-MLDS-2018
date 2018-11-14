@@ -192,7 +192,7 @@ def main(arg):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='chatbot')
-    parser.add_argument('--model', type=str, default = './model/model_800000.pkl')
+    parser.add_argument('--model', type=str, default = './new_schedule.pkl')
     parser.add_argument('--txtdata', type=str)
     parser.add_argument('-d','--direct', action='store_true')
     parser.add_argument('--input', type=str)
