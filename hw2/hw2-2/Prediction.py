@@ -184,8 +184,8 @@ def main(arg):
                 one_hot_index = decoder_output.argmax(dim=1).item()
                 if wv.index2entity[one_hot_index] == '<EOS>':
                     break
-                #if wv.index2entity[one_hot_index] not in output_words:
-                output_words.append(wv.index2entity[one_hot_index])
+                if wv.index2entity[one_hot_index] not in output_words:
+                    output_words.append(wv.index2entity[one_hot_index])
                 count_len+=1
             ans_list.append(output_words)
             count += 1
@@ -198,13 +198,12 @@ def main(arg):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='chatbot')
-    parser.add_argument('--model', type=str, default = './new_schedule.pkl')
-    parser.add_argument('--txtdata', type=str)
+    parser.add_argument('model', type=str)
+    parser.add_argument('txtdata', type=str)
     parser.add_argument('-d','--direct', action='store_true')
     parser.add_argument('--input', type=str)
-    parser.add_argument('--output', type=str)
-    parser.add_argument('--word2vec', type=str,
-                        default = './word2vec/word2vec_wv_Jeff.wv')
+    parser.add_argument('output', type=str)
+    parser.add_argument('word2vec', type=str)
     
     arg = parser.parse_args()
     main(arg)
