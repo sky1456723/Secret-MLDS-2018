@@ -2,8 +2,8 @@
 
 Usage:  
 ```
-python Prediction.py [model MODEL_PATh] [txtdata INPUT_DATA_PATH]
-                     [word2vec WORD2VEC_MODEL] [output OUTPUT_PATH]
+python Prediction.py [model MODEL_PATH] [txtdata INPUT_DATA_PATH]
+                     [output OUTPUT_PATH] [word2vec WORD2VEC_MODEL]
 ```
 Please download model from : https://drive.google.com/open?id=132242ZyfvShFFOvU1021UvT4_nCuJKcl  
 word2vec model is at ```./word2vec/wv_new.wv```   
@@ -18,10 +18,11 @@ INPUT_DATA_PATH and OUTPUT_PATH are assigned by user.
 This part is carried out by the file ```train_with_schedule.py```. Usage:
 
 ```
-usage: Chatbot_train.py [-h] [--model_name MODEL_NAME] [--figure_name FIGURE_NAME]
-                        [--epoch_number EPOCH_NUMBER] [--batch_size BATCH_SIZE]
-                        [--optimizer OPTIMIZER] [--word2vec WORD2VEC]
-                        [--force] (--load_model | --new_model | --remove_model)
+usage: train_with_schedule.py [-h] [--model_name MODEL_NAME] [--figure_name FIGURE_NAME]
+                              [--epoch_number EPOCH_NUMBER] [--batch_size BATCH_SIZE]
+                              [--optimizer OPTIMIZER] [--word2vec WORD2VEC]
+                              [--force] (--load_model | --new_model | --remove_model)
+                              [data number]
 ```
 
 One of the three arguments ```--load_model/-l --new_model/-n --remove_model/-r``` is required, all of which requires a model name to operate properly. The model name defaults to ```chatbot_model_default```, which corresponds to model file name ```chatbot_model_default.pkl``` and optimizer state file name ```chatbot_model_default_optim.pkl```. The model name can be specified by the flag ```--model_name```. 
