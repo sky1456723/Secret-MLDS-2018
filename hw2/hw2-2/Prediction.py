@@ -184,8 +184,8 @@ def main(arg):
                 one_hot_index = decoder_output.argmax(dim=1).item()
                 if wv.index2entity[one_hot_index] == '<EOS>':
                     break
-                if wv.index2entity[one_hot_index] not in output_words:
-                    output_words.append(wv.index2entity[one_hot_index])
+                #if wv.index2entity[one_hot_index] not in output_words:
+                output_words.append(wv.index2entity[one_hot_index])
                 count_len+=1
             ans_list.append(output_words)
             count += 1
