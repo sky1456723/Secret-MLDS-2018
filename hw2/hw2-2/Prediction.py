@@ -198,13 +198,12 @@ def main(arg):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='chatbot')
-    parser.add_argument('--model', type=str, default = './new_schedule.pkl')
-    parser.add_argument('--txtdata', type=str)
+    parser.add_argument('model', type=str)
+    parser.add_argument('txtdata', type=str)
     parser.add_argument('-d','--direct', action='store_true')
     parser.add_argument('--input', type=str)
-    parser.add_argument('--output', type=str)
-    parser.add_argument('--word2vec', type=str,
-                        default = './word2vec/word2vec_wv_Jeff.wv')
+    parser.add_argument('output', type=str)
+    parser.add_argument('word2vec', type=str)
     
     arg = parser.parse_args()
     main(arg)
