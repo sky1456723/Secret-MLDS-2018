@@ -2,7 +2,8 @@
 
 Usage:  
 ```
-python Prediction.py model MODEL_PATH txtdata INPUT_DATA_PATH
+python Prediction.py [-h] [-d] [--input INPUT] 
+                     model MODEL_PATH txtdata INPUT_DATA_PATH
                      output OUTPUT_PATH word2vec WORD2VEC_MODEL
 ```
 Please download model from : https://drive.google.com/open?id=132242ZyfvShFFOvU1021UvT4_nCuJKcl  
@@ -12,6 +13,7 @@ WORD2VEC is the path of the word2vec model.
 INPUT_DATA_PATH is the path of input txt file.    
 OUTPUT_PATH is the path of output file path.    
 INPUT_DATA_PATH and OUTPUT_PATH are assigned by user.
+It's no need to use ```--input```.  
   
 # Training
 
