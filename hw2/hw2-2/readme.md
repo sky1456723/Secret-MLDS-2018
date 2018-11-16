@@ -1,6 +1,17 @@
+# Prediction  
+
+Usage:  
+```
+python Prediction.py [--model MODEL_PATh] [--txtdata INPUT_DATA_PATH]
+                     [--word2vec WORD2VEC_MODEL] [--output OUTPUT_PATH]
+```
+Please download model from : https://drive.google.com/open?id=132242ZyfvShFFOvU1021UvT4_nCuJKcl  
+word2vec model is at ```./word2vec/wv_new.wv```  
+INPUT_DATA_PATH and OUTPUT_DATA_PATH are assigned by user.  
+  
 # Training and Visualization
 
-This part is carried out by the file ```Chatbot_train.py```. Usage:
+This part is carried out by the file ```train_with_schedule.py```. Usage:
 
 ```
 usage: Chatbot_train.py [-h] [--model_name MODEL_NAME] [--figure_name FIGURE_NAME]
@@ -18,13 +29,3 @@ The model also relies on a Gensim Word2Vec model with its path specified by the 
 Users can force the program to train a new model by feeding it the flag ```--force```. Beware of existing models.
 
 Currently this program loads first 2000 entries of ```question_array1.npy``` and ```answer_array.npy```, written at line 99 and 100. May need to change this to achieve more desirable results.
-
-# To use Dataloader
-Some requirement of input data type is in Data.py
-Please do something like:
-```
-import Data
-import torch.utils.data
-dataset = Data.ChatbotDataset(data, label)
-dataloader = torch.utils.data.DataLoader(dataset = dataset, collate_fn = collate_fn, ...)
-```
