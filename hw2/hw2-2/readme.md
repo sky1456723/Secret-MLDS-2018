@@ -2,8 +2,8 @@
 
 Usage:  
 ```
-python Prediction.py [--model MODEL_PATh] [--txtdata INPUT_DATA_PATH]
-                     [--word2vec WORD2VEC_MODEL] [--output OUTPUT_PATH]
+python Prediction.py [model MODEL_PATh] [txtdata INPUT_DATA_PATH]
+                     [word2vec WORD2VEC_MODEL] [output OUTPUT_PATH]
 ```
 Please download model from : https://drive.google.com/open?id=132242ZyfvShFFOvU1021UvT4_nCuJKcl  
 word2vec model is at ```./word2vec/wv_new.wv```   
