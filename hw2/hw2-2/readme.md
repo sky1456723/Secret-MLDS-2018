@@ -6,8 +6,12 @@ python Prediction.py [--model MODEL_PATh] [--txtdata INPUT_DATA_PATH]
                      [--word2vec WORD2VEC_MODEL] [--output OUTPUT_PATH]
 ```
 Please download model from : https://drive.google.com/open?id=132242ZyfvShFFOvU1021UvT4_nCuJKcl  
-word2vec model is at ```./word2vec/wv_new.wv```  
-INPUT_DATA_PATH and OUTPUT_DATA_PATH are assigned by user.  
+word2vec model is at ```./word2vec/wv_new.wv```   
+MODEL_PATH is the path of the model.  
+WORD2VEC is the path of the word2vec model.  
+INPUT_DATA_PATH is the path of input txt file.    
+OUTPUT_PATH is the path of output file path.    
+INPUT_DATA_PATH and OUTPUT_PATH are assigned by user.
   
 # Training and Visualization
 
