@@ -28,6 +28,7 @@ class Model(nn.Module):
     def __init__(self, encoder_layer=1, decoder_layer=1, w2v_size=250, one_hot_size=71347, batch_size=20, optimizer='NONE'):
         super(Model, self).__init__()
         self.encoder_layer = encoder_layer
+        self.decoder_layer = decoder_layer
         self.global_epoch = 0
         self.w2v_size = w2v_size
         self.hidden_size = 1024
@@ -71,7 +72,7 @@ class Model(nn.Module):
         empty_input = torch.zeros((1, x.shape[1], self.one_hot_size), dtype=torch.float32).to(device)
         
         ### FIRST DECODER INPUT ###
-        decoder_output, decoder_hidden = self.decoder(empty_input, encoder_hidden[0:int(self.encoder_layer/2+1)], encoder_outputs)
+        decoder_output, decoder_hidden = self.decoder(empty_input, encoder_hidden[0:int(self.decoder_layer)], encoder_outputs)
         decoder_outputs_list.append(decoder_output)
         
         ### ONE-HOT TEACHER FORCING ###
@@ -116,7 +117,7 @@ class Model(nn.Module):
                 decoder_outputs_list.append(decoder_output)
         ### Change schedule sampling rate ###
         self.batch_num += 1
-        self.schedule_rate = 1000/(1000+np.exp(self.batch_num/1000))
+        self.schedule_rate = 10000/(10000+np.exp(self.batch_num/10000))
         # Turn a list of tensors into a tensor, e.g. n tensors of shape (x, y, z) stacked at dim=0
         # returns a tensor of shape (n, x, y, z)
         # Lastly, make sure that we return a tensor of shape (batch_size, max_length, one_hot_size)
@@ -157,7 +158,9 @@ def main(arg):
     if arg.direct:
         pass
     else:
+        count = 0
         for one_data in data:
+            print("Process data ", count)
             max_ans_len = 10
             input_data = torch.Tensor(one_data).reshape(1, len(one_data), -1).transpose(0,1).to(device)
             data_len = torch.Tensor([len(one_data)]).to(device).long()
@@ -166,10 +169,11 @@ def main(arg):
             
             ### FIRST DECODER INPUT ###
             output_words = []
-            decoder_output, decoder_hidden = model.decoder(empty_input, encoder_hidden[0:int(model.encoder_layer/2+1)], encoder_outputs)
+            decoder_output, decoder_hidden = model.decoder(empty_input, encoder_hidden[0:int(model.encoder_layer)], encoder_outputs)
             one_hot_index = decoder_output.argmax(dim=1).item()
             output_words.append(wv.index2entity[one_hot_index])
             count_len = 1
+            #print(decoder_output.shape)
             while output_words[-1] != '<EOS>' and count_len<max_ans_len:
                 ### MUST change
                 #last_word = torch.Tensor(wv[output_words[-1]]).reshape(1,1,-1).to(device)
@@ -184,6 +188,8 @@ def main(arg):
                     output_words.append(wv.index2entity[one_hot_index])
                 count_len+=1
             ans_list.append(output_words)
+            count += 1
+            print(output_words)
         output_file = open(arg.output, 'w')
         for sentence in ans_list:
             for word in sentence:
