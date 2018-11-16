@@ -22,7 +22,7 @@ usage: train_with_schedule.py [-h] [--model_name MODEL_NAME] [--figure_name FIGU
                               [--epoch_number EPOCH_NUMBER] [--batch_size BATCH_SIZE]
                               [--optimizer OPTIMIZER] [--word2vec WORD2VEC]
                               [--force] (--load_model | --new_model | --remove_model)
-                              data number
+                              data_number
 ```
 
 One of the three arguments ```--load_model/-l --new_model/-n --remove_model/-r``` is required, all of which requires a model name to operate properly. The model name defaults to ```chatbot_model_default```, which corresponds to model file name ```chatbot_model_default.pkl``` and optimizer state file name ```chatbot_model_default_optim.pkl```. The model name can be specified by the flag ```--model_name```. 
@@ -33,5 +33,5 @@ The model also relies on a Gensim Word2Vec model with its path specified by the 
 
 Users can force the program to train a new model by feeding it the flag ```--force```. Beware of existing models.
 
-```data number``` means how many data do you want to use for training.  
+```data_number``` means how many data do you want to use for training.  
 The training data must be put at ```hw2-2```, which is a numpy array.  
