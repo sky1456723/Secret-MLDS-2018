@@ -13,7 +13,7 @@ INPUT_DATA_PATH is the path of input txt file.
 OUTPUT_PATH is the path of output file path.    
 INPUT_DATA_PATH and OUTPUT_PATH are assigned by user.
   
-# Training and Visualization
+# Training
 
 This part is carried out by the file ```train_with_schedule.py```. Usage:
 
@@ -33,4 +33,4 @@ The model also relies on a Gensim Word2Vec model with its path specified by the 
 
 Users can force the program to train a new model by feeding it the flag ```--force```. Beware of existing models.
 
-Currently this program loads first 2000 entries of ```question_array1.npy``` and ```answer_array.npy```, written at line 99 and 100. May need to change this to achieve more desirable results.
+```data number``` means how many data do you want to use for training.
