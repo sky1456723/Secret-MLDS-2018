@@ -60,7 +60,9 @@ class Generator(nn.Module):
         self.z_dim = z_dim
         self.c_dim = c_dim
 
-        self.linear = nn.Linear(z_dim + c_dim, 128*16*16)
+        self.linear = nn.Sequential(
+            nn.Linear(z_dim + c_dim, 128*16*16)
+        )
         self.seq = nn.Sequential(
             nn.BatchNorm2d(128*16*16),
             nn.ReLU(),
@@ -85,7 +87,7 @@ class Discriminator(nn.Module):
         
         self.linear1 = nn.Linear(512*52*52, 512)
         self.linear2 = nn.Linear(512, 1)
-        self.reconstr = nn.Linear(512*52*52, c_dim)
+        self.reconstr = nn.Linear(512, c_dim)
         self.sig = nn.Sigmoid()
         self.seq = nn.Sequential(
             SN(nn.Conv2d(3, 32, 4)),    # (batch, 32, 61, 61)
@@ -198,6 +200,8 @@ def main():
     print(model(test_input, z=test_z, c=test_c).keys())
     model.train_generator()
     print(model(test_input, z=test_z, c=test_c).keys())
+    
+    print(model.parameters()['generator'])
 
 if __name__ == '__main__':
     main()
