@@ -150,7 +150,10 @@ def main(args):
             g_loss = loss.item()
             G_optimizer.step()
             print("Discriminator loss: %4f, Generator loss: %4f" %
-                  (d_loss, g_loss))
+                  (d_loss, g_loss), end='\r')
+    torch.save(model, model_name)
+    torch.save(G_optimizer.state_dict(), G_optim_name)
+    torch.save(D_optimizer.state_dict(), D_optim_name)
                 
         
    
