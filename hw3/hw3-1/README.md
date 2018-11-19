@@ -40,15 +40,21 @@ InfoGAN(
 
 ## Initialization
 
+```Model(z_dim, c_dim)```
+
 The model requires two parameters: dimension of noise (```z_dim```) and dimension of latent code (```c_dim```).
 
 ## Parameters
+
+```Model.parameters()```
 
 The method ```parameters()``` returns a dictionary with three keys: ```'generator'``` corresponds to the parameters of the generator, ```'discriminator'``` to those of the discriminator, and ```'all'``` to all parameters.
 
 ## Forward
 
-Depending on the state of the model, there are two mechanisms of forward. Both returns a dictionary of tensors.
+```Model.forward(x, z=None, c=None)```
+
+Depending on the state of the model, there are two mechanisms of forward. Both returns a dictionary of tensors. The model state can be toggled by methods ```Model.train_discriminator()``` and ```Model.train_generator()```.
 
 1) training discriminator: the generator produces a batch of fake data depending on ```z``` and ```c``` (both of which can be specified by user). Both the batch of true data ```x``` and that of false data is passed through the discriminator. The returned tensors are:
 
