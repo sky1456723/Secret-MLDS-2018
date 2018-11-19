@@ -128,12 +128,15 @@ def main(args):
                 break
             
             model.train_discriminator()
+            d_loss = 0
+            g_loss = 0
             for d in range(update_D):
                 D_optimizer.zero_grad()
                 prediction = model(true_data)
                 loss = criterion(prediction, args.model_type,
                                  model.parameters(), model.train_D)
                 loss.backward()
+                d_loss = loss.item()
                 D_optimizer.step()
                 if args.model_type == 'WGAN':
                     for param in model.D.parameters():
@@ -144,7 +147,10 @@ def main(args):
             prediction = model(true_data)
             loss = criterion(prediction, args.model_type, model.parameters())
             loss.backward()
+            g_loss = loss.item()
             G_optimizer.step()
+            print("Discriminator loss: %4f, Generator loss: %4f" %
+                  (d_loss, g_loss))
                 
         
    
