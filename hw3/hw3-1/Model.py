@@ -52,6 +52,7 @@ ConvTranspose2d:
         output_padding = 0
 
 InfoGAN paper: https://arxiv.org/pdf/1606.03657.pdf
+TA's parameters: https://docs.google.com/presentation/d/1nDvL6YFUQBqXauOOpm8uQhs4klcNPOtMKeu5-SSdcBA/edit#slide=id.p3
 '''
 
 class Generator(nn.Module):
@@ -64,46 +65,52 @@ class Generator(nn.Module):
             nn.Linear(z_dim + c_dim, 128*16*16)
         )
         self.seq = nn.Sequential(
-            nn.BatchNorm2d(128*16*16),
             nn.ReLU(),
-            nn.ConvTranspose2d(128*16*16, 128, 4),    # (batch, 128, 4, 4)
+            SN(nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1)),    # (batch, 128, 32, 32)
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 4, stride=3), # (batch, 64, 13, 13)
+            SN(nn.ConvTranspose2d(128, 64, 4, stride = 2, padding = 1)), # (batch, 64, 64, 64)
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 3, 4, stride=5),   # (batch, 3, 64, 64)
-            nn.Tanh()
+            SN(nn.Conv2d(64, 3, 3, stride = 1, padding = 1)),   # (batch, 3, 64, 64)
+            nn.Sigmoid()
         )
 
     def forward(self, z, c):
         z_c = torch.cat((z, c), -1) # shape (batch, dim_z + dim_c)
         z_c = self.linear(z_c) # shape (batch, 128*16*16)
-        return self.seq(z_c.view(z_c.shape[0], -1, 1, 1))
+        z_c = z_c.view(z_c.shape[0], -1, 16, 16) # 128 channels, 16x16 image
+        return self.seq(z_c)
 
 class Discriminator(nn.Module):
     def __init__(self, c_dim):
         super(Discriminator, self).__init__()
         
-        self.linear1 = nn.Linear(512*52*52, 512)
+        self.linear1 = nn.Linear(256*52*52, 1)
         self.linear2 = nn.Linear(512, 1)
-        self.reconstr = nn.Linear(512, c_dim)
+        self.reconstr = nn.Linear(1, c_dim) # change temporarily
         self.sig = nn.Sigmoid()
         self.seq = nn.Sequential(
             SN(nn.Conv2d(3, 32, 4)),    # (batch, 32, 61, 61)
+            #nn.BatchNorm2d(32),
             nn.LeakyReLU(0.1),
             SN(nn.Conv2d(32, 64, 4)),   # (batch, 64, 58, 58)
+            #nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
             SN(nn.Conv2d(64, 128, 4)),  # (batch, 128, 55, 55)
+            #nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(128, 256, 4)), # (batch, 512, 52, 52)
+            SN(nn.Conv2d(128, 256, 4)), # (batch, 256, 52, 52)
+            #nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1)
         )
     
     def forward(self, x):
-        raw = self.seq(x).view(-1, 512*52*52) # (batch, 512*52*52)
+        raw = self.seq(x)
+        #print(raw.shape)
+        raw = raw.view(-1, 256*52*52) # (batch, 256*52*52)
         raw = self.linear1(raw)               # (batch, 512)
-        raw_score = self.linear2(raw)
+        raw_score = raw                       # reduce parameter
         sig_score = self.sig(raw_score)
         c_reconstr = self.reconstr(raw)       # (batch, c_dim)
         return raw_score, sig_score, c_reconstr
@@ -155,6 +162,7 @@ class InfoGAN(nn.Module):
             return_dict['false_data'] = x_g
             return_dict['raw_false'] = raw
             return_dict['sig_false'] = sig
+            return_dict['latent_code'] = c
             return_dict['reconstructed_code'] = crec
             
             return return_dict
@@ -179,7 +187,7 @@ class InfoGAN(nn.Module):
         self.train_D = False
     
     def parameters(self):
-        return {'discriminator': self.D.parameters(), 'generator': self.G.parameters}
+        return {'all': super(InfoGAN, self).parameters(), 'discriminator': self.D.parameters(), 'generator': self.G.parameters()}
 
 def main():
     model = InfoGAN(128, 5)
@@ -187,9 +195,9 @@ def main():
     print(model)
     print("")
     
-    test_input = torch.randn((50, 3, 64, 64), dtype=torch.float32).cuda()
-    test_z = torch.randn((50, 128), dtype=torch.float32).cuda()
-    test_c = torch.randn((50, 5), dtype=torch.float32).cuda()
+    test_input = torch.randn((1, 3, 64, 64), dtype=torch.float32).cuda()
+    test_z = torch.randn((1, 128), dtype=torch.float32).cuda()
+    test_c = torch.randn((1, 5), dtype=torch.float32).cuda()
     
     model.train_discriminator()
     print(model(test_input).keys())
@@ -201,6 +209,7 @@ def main():
     model.train_generator()
     print(model(test_input, z=test_z, c=test_c).keys())
     
+    print(model.parameters()['all'])
     print(model.parameters()['generator'])
 
 if __name__ == '__main__':
