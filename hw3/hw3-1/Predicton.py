@@ -4,12 +4,12 @@ import Model
 import matplotlib.pyplot as plt
 import argparse
 
-def save_imgs(generator, output_path):
+def save_imgs(generator, output_path, z1, z2):
     #import matplotlib.pyplot as plt
 
     r, c = 5, 5
-    noise_z = np.random.normal(0, 1, (r * c, 50))
-    noise_c = np.random.normal(0, 1, (r * c, 50))
+    noise_z = np.random.normal(0, 1, (r * c, z1))
+    noise_c = np.random.normal(0, 1, (r * c, z2))
     noise_z = torch.FloatTensor(noise_z)
     noise_c = torch.FloatTensor(noise_c)
     # gen_imgs should be shape (25, 64, 64, 3)
@@ -29,8 +29,9 @@ def save_imgs(generator, output_path):
 
 def main(args):
     model = torch.load(args.model, map_location='cpu')
+    model = model.eval()
     generator = model.G
-    save_imgs(generator, args.output)
+    save_imgs(generator, args.output, model.z_dim, model.c_dim)
     return 0 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='GAN HW3-1')

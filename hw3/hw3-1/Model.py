@@ -65,13 +65,25 @@ class Generator(nn.Module):
             nn.Linear(z_dim + c_dim, 128*16*16)
         )
         self.seq = nn.Sequential(
-            nn.ReLU(),
-            SN(nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1)),    # (batch, 128, 32, 32)
+            nn.LeakyReLU(0.1),
+            SN(nn.ConvTranspose2d(128, 256, 4, stride = 2, padding = 1)),    # (batch, 256, 32, 32)
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.1),
+            SN(nn.Conv2d(256, 256, 3, stride = 1, padding = 1)), # (batch, 256, 32, 32)
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.1),
+            SN(nn.Conv2d(256, 128, 3, stride = 1, padding = 1)), # (batch, 128, 32, 32)
             nn.BatchNorm2d(128),
-            nn.ReLU(),
-            SN(nn.ConvTranspose2d(128, 64, 4, stride = 2, padding = 1)), # (batch, 64, 64, 64)
+            nn.LeakyReLU(0.1),
+            SN(nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1)), # (batch, 128, 64, 64)
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.1),
+            SN(nn.Conv2d(128, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
+            SN(nn.Conv2d(64, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.1),
             SN(nn.Conv2d(64, 3, 3, stride = 1, padding = 1)),   # (batch, 3, 64, 64)
             nn.Sigmoid()
         )
@@ -86,29 +98,31 @@ class Discriminator(nn.Module):
     def __init__(self, c_dim):
         super(Discriminator, self).__init__()
         
-        self.linear1 = nn.Linear(256*52*52, 1)
-        self.linear2 = nn.Linear(512, 1)
+        self.linear1 = nn.Linear(256*16*16, 1)
+        self.linear2 = nn.Linear(100, 1)
         self.reconstr = nn.Linear(1, c_dim) # change temporarily
         self.sig = nn.Sigmoid()
         self.seq = nn.Sequential(
-            SN(nn.Conv2d(3, 32, 4)),    # (batch, 32, 61, 61)
-            #nn.BatchNorm2d(32),
+            SN(nn.Conv2d(3, 32, kernel_size = 3, padding = 1)),    # (batch, 32, 64, 64)
+            nn.BatchNorm2d(32),
             nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(32, 64, 4)),   # (batch, 64, 58, 58)
-            #nn.BatchNorm2d(64),
+            nn.AvgPool2d(kernel_size = 2), # (batch, 32, 32, 32)
+            SN(nn.Conv2d(32, 64, kernel_size = 3, padding = 1)),   # (batch, 64, 32, 32)
+            nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(64, 128, 4)),  # (batch, 128, 55, 55)
-            #nn.BatchNorm2d(128),
+            SN(nn.Conv2d(64, 128, kernel_size = 3, padding = 1)),  # (batch, 128, 32, 32)
+            nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(128, 256, 4)), # (batch, 256, 52, 52)
-            #nn.BatchNorm2d(256),
+            nn.AvgPool2d(kernel_size = 2), # batch, 128, 16, 16)
+            SN(nn.Conv2d(128, 256, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
+            nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1)
         )
     
     def forward(self, x):
         raw = self.seq(x)
         #print(raw.shape)
-        raw = raw.view(-1, 256*52*52) # (batch, 256*52*52)
+        raw = raw.view(-1, 256*16*16)         # (batch, 256*16*16)
         raw = self.linear1(raw)               # (batch, 512)
         raw_score = raw                       # reduce parameter
         sig_score = self.sig(raw_score)
@@ -140,7 +154,7 @@ class InfoGAN(nn.Module):
         return_dict = {}
         
         if z is None:
-            z = torch.randn((x.shape[0], self.z_dim), dtype=torch.float32).cuda()
+            z = torch.randn((x.shape[0], self.z_dim), dtype=torch.float32).cuda() # x.shape[0]:batch size
         if c is None:
             c = torch.randn((x.shape[0], self.c_dim), dtype=torch.float32).cuda()
         
@@ -158,6 +172,7 @@ class InfoGAN(nn.Module):
             return_dict['sig_true'] = sig
             
             x_g = self.G(z=z, c=c)
+            x_g = x_g + 1e-5*torch.rand_like(x_g)
             raw, sig, crec = self.D(x_g)
             return_dict['false_data'] = x_g
             return_dict['raw_false'] = raw
@@ -174,6 +189,7 @@ class InfoGAN(nn.Module):
             #     1) z + c
             #     2) score of false data (D(x'))
             x_g = self.G(z=z, c=c)
+            x_g = x_g + 1e-5*torch.rand_like(x_g)
             raw, sig, _ = self.D(x_g)
             return_dict['noise'] = torch.cat((z, c), dim=-1)
             return_dict['raw_false'] = raw
