@@ -37,7 +37,7 @@ def GetDataset():
     img_list = []
     for item in imgname:
         im = cv2.imread(item)
-        img_list.append(np.transpose(im , (2,0,1)) )
+        img_list.append(np.transpose(im , (2,0,1))/255.0)
 
     tag = np.array(pd.read_csv('./data/extra_data/tags.csv'))
     tag_head = np.array(['aqua hair aqua eyes'])
@@ -73,16 +73,33 @@ def GetDataset():
         eye = np.zeros(len(eye_dict))
         eye[eye_dict[tmp[2]]] = 1
         feature.append([hair,eye])
+    '''
+    extra_imgname1 = glob.glob(r'./data/faces_data1/*.jpg')
+    hair = np.zeros(len(hair_dict))
+    eye = np.zeros(len(eye_dict))
+    for item in extra_imgname1:
+        im = cv2.imread(item)
+        im = cv2.resize(im, (64,64), interpolation=cv2.INTER_CUBIC)
+        img_list.append(np.transpose(im , (2,0,1))/255.0)
+        feature.append([hair,eye])
+    '''
+    extra_imgname2 = glob.glob(r'./data/faces/*.jpg')
+    for item in extra_imgname2:
+        im = cv2.imread(item)
+        im = cv2.resize(im, (64,64), interpolation=cv2.INTER_CUBIC)
+        img_list.append(np.transpose(im , (2,0,1))/255.0)
+        feature.append([hair,eye])
+    
     feature = np.array(feature)
     # print(feature[0],len(feature),type(feature),feature.shape)
     img_list = np.array(img_list)
-    img_list = img_list/255.0
     # print(len(img_list),type(img_list),img_list.shape)
 
     dataset = GANDataset(img_list, feature)
     return dataset
-    #dataloader = torch.utils.data.DataLoader(dataset, batch_size = 4)
     '''
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size = 4)
+    
     for i, (x,f1,f2) in enumerate(dataloader):
         print(i)
         print(type(x),x.shape)
@@ -94,7 +111,7 @@ def GetDataset():
 
     # in each iteration, dataloader will return:
     # x: batch of images
-    # <class 'torch.Tensor'> torch.Size([batch size, 64, 64, 3])
+    # <class 'torch.Tensor'> torch.Size([batch size, 3, 64, 64])
     # f1: hair color 
     # <class 'torch.Tensor'> torch.Size([batch size, 12])
     # f2: eye colar 
