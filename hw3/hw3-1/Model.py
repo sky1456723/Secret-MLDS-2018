@@ -66,7 +66,6 @@ class Generator(nn.Module):
         )
         self.seq = nn.Sequential(
             nn.LeakyReLU(0.1),
-<<<<<<< HEAD
             #nn.ReLU(),
             SN(nn.ConvTranspose2d(128, 256, 4, stride = 2, padding = 1)),    # (batch, 256, 32, 32)
             nn.BatchNorm2d(256),
@@ -92,26 +91,6 @@ class Generator(nn.Module):
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-=======
-            SN(nn.ConvTranspose2d(128, 256, 4, stride = 2, padding = 1)),    # (batch, 256, 32, 32)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(256, 256, 3, stride = 1, padding = 1)), # (batch, 256, 32, 32)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(256, 128, 3, stride = 1, padding = 1)), # (batch, 128, 32, 32)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            SN(nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1)), # (batch, 128, 64, 64)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(128, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(64, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
->>>>>>> refs/remotes/origin/master
             SN(nn.Conv2d(64, 3, 3, stride = 1, padding = 1)),   # (batch, 3, 64, 64)
             nn.Sigmoid()
         )
@@ -134,7 +113,6 @@ class Discriminator(nn.Module):
             SN(nn.Conv2d(3, 32, kernel_size = 3, padding = 1)),    # (batch, 32, 64, 64)
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.1),
-<<<<<<< HEAD
             #nn.ReLU(),
             nn.AvgPool2d(kernel_size = 2), # (batch, 32, 32, 32)
             #nn.MaxPool2d(kernel_size = 2),
@@ -152,19 +130,6 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1),
             #nn.ReLU()
-=======
-            nn.AvgPool2d(kernel_size = 2), # (batch, 32, 32, 32)
-            SN(nn.Conv2d(32, 64, kernel_size = 3, padding = 1)),   # (batch, 64, 32, 32)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(64, 128, kernel_size = 3, padding = 1)),  # (batch, 128, 32, 32)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            nn.AvgPool2d(kernel_size = 2), # batch, 128, 16, 16)
-            SN(nn.Conv2d(128, 256, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1)
->>>>>>> refs/remotes/origin/master
         )
     
     def forward(self, x):
