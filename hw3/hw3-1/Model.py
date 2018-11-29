@@ -83,11 +83,7 @@ class Generator(nn.Module):
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-<<<<<<< HEAD
             nn.Conv2d(64, 3, 3, stride = 1, padding = 1),   # (batch, 3, 64, 64)
-=======
-            SN(nn.Conv2d(64, 3, 3, stride = 1, padding = 1)),   # (batch, 3, 64, 64)
->>>>>>> 5e78eab578ff2d85e05f33b625cb4633160053b9
             nn.Sigmoid()
         )
 
@@ -122,13 +118,8 @@ class Discriminator(nn.Module):
             #nn.ReLU(),
             nn.AvgPool2d(kernel_size = 2), # batch, 128, 16, 16)
             #nn.MaxPool2d(kernel_size = 2),
-<<<<<<< HEAD
             SN(nn.Conv2d(128, 128, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
             nn.BatchNorm2d(128),
-=======
-            SN(nn.Conv2d(128, 256, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
-            nn.BatchNorm2d(256),
->>>>>>> 5e78eab578ff2d85e05f33b625cb4633160053b9
             nn.LeakyReLU(0.1),
             #nn.ReLU()
         )
