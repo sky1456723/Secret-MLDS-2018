@@ -66,53 +66,24 @@ class Generator(nn.Module):
         )
         self.seq = nn.Sequential(
             nn.LeakyReLU(0.1),
-<<<<<<< HEAD
             #nn.ReLU(),
-            SN(nn.ConvTranspose2d(128, 256, 4, stride = 2, padding = 1)),    # (batch, 256, 32, 32)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1),
-            #nn.ReLU(),
-            SN(nn.Conv2d(256, 256, 3, stride = 1, padding = 1)), # (batch, 256, 32, 32)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1),
-            #nn.ReLU(),
-            SN(nn.Conv2d(256, 128, 3, stride = 1, padding = 1)), # (batch, 128, 32, 32)
+            nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1),    # (batch, 128, 32, 32)
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            SN(nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1)), # (batch, 128, 64, 64)
+            nn.Conv2d(128, 128, 3, stride = 1, padding = 1), # (batch, 128, 32, 32)
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            SN(nn.Conv2d(128, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
+            nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1), # (batch, 128, 64, 64)
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.1),
+            #nn.ReLU(),
+            nn.Conv2d(128, 64, 3, stride = 1, padding = 1), # (batch, 64, 64, 64)
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            SN(nn.Conv2d(64, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
-            #nn.ReLU(),
-=======
-            SN(nn.ConvTranspose2d(128, 256, 4, stride = 2, padding = 1)),    # (batch, 256, 32, 32)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(256, 256, 3, stride = 1, padding = 1)), # (batch, 256, 32, 32)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(256, 128, 3, stride = 1, padding = 1)), # (batch, 128, 32, 32)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            SN(nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1)), # (batch, 128, 64, 64)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(128, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(64, 64, 3, stride = 1, padding = 1)), # (batch, 64, 64, 64)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
->>>>>>> refs/remotes/origin/master
-            SN(nn.Conv2d(64, 3, 3, stride = 1, padding = 1)),   # (batch, 3, 64, 64)
+            nn.Conv2d(64, 3, 3, stride = 1, padding = 1),   # (batch, 3, 64, 64)
             nn.Sigmoid()
         )
 
@@ -126,7 +97,7 @@ class Discriminator(nn.Module):
     def __init__(self, c_dim):
         super(Discriminator, self).__init__()
         
-        self.linear1 = nn.Linear(256*16*16, 1)
+        self.linear1 = nn.Linear(128*16*16, 1)
         self.linear2 = nn.Linear(100, 1)
         self.reconstr = nn.Linear(1, c_dim) # change temporarily
         self.sig = nn.Sigmoid()
@@ -134,7 +105,6 @@ class Discriminator(nn.Module):
             SN(nn.Conv2d(3, 32, kernel_size = 3, padding = 1)),    # (batch, 32, 64, 64)
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.1),
-<<<<<<< HEAD
             #nn.ReLU(),
             nn.AvgPool2d(kernel_size = 2), # (batch, 32, 32, 32)
             #nn.MaxPool2d(kernel_size = 2),
@@ -148,29 +118,16 @@ class Discriminator(nn.Module):
             #nn.ReLU(),
             nn.AvgPool2d(kernel_size = 2), # batch, 128, 16, 16)
             #nn.MaxPool2d(kernel_size = 2),
-            SN(nn.Conv2d(128, 256, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
-            nn.BatchNorm2d(256),
+            SN(nn.Conv2d(128, 128, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
+            nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
             #nn.ReLU()
-=======
-            nn.AvgPool2d(kernel_size = 2), # (batch, 32, 32, 32)
-            SN(nn.Conv2d(32, 64, kernel_size = 3, padding = 1)),   # (batch, 64, 32, 32)
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1),
-            SN(nn.Conv2d(64, 128, kernel_size = 3, padding = 1)),  # (batch, 128, 32, 32)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            nn.AvgPool2d(kernel_size = 2), # batch, 128, 16, 16)
-            SN(nn.Conv2d(128, 256, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.1)
->>>>>>> refs/remotes/origin/master
         )
     
     def forward(self, x):
         raw = self.seq(x)
         #print(raw.shape)
-        raw = raw.view(-1, 256*16*16)         # (batch, 256*16*16)
+        raw = raw.view(-1, 128*16*16)         # (batch, 256*16*16)
         raw = self.linear1(raw)               # (batch, 512)
         raw_score = raw                       # reduce parameter
         sig_score = self.sig(raw_score)
@@ -220,7 +177,7 @@ class InfoGAN(nn.Module):
             return_dict['sig_true'] = sig
             
             x_g = self.G(z=z, c=c)
-            x_g = x_g + 1e-5*torch.rand_like(x_g)
+            #x_g = x_g + 1e-5*torch.rand_like(x_g)
             raw, sig, crec = self.D(x_g)
             return_dict['false_data'] = x_g
             return_dict['raw_false'] = raw
@@ -237,7 +194,7 @@ class InfoGAN(nn.Module):
             #     1) z + c
             #     2) score of false data (D(x'))
             x_g = self.G(z=z, c=c)
-            x_g = x_g + 1e-5*torch.rand_like(x_g)
+            #x_g = x_g + 1e-5*torch.rand_like(x_g)
             raw, sig, _ = self.D(x_g)
             return_dict['noise'] = torch.cat((z, c), dim=-1)
             return_dict['raw_false'] = raw
