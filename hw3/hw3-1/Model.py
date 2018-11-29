@@ -71,7 +71,7 @@ class Generator(nn.Module):
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            nn.Conv2d(128, 128, 3, stride = 1, padding = 1), # (batch, 128, 32, 32)
+            nn.Conv2d(128, 128, 5, stride = 1, padding = 2), # (batch, 128, 32, 32)
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
@@ -97,41 +97,57 @@ class Discriminator(nn.Module):
     def __init__(self, c_dim):
         super(Discriminator, self).__init__()
         
-        self.linear1 = nn.Linear(128*16*16, 1)
+        self.linear1 = nn.Linear(128*15*15, 1)
         self.linear2 = nn.Linear(100, 1)
-        self.reconstr = nn.Linear(1, c_dim) # change temporarily
+        self.reconstr = nn.Linear(64*15*15, c_dim) # change temporarily
         self.sig = nn.Sigmoid()
         self.seq = nn.Sequential(
-            SN(nn.Conv2d(3, 32, kernel_size = 3, padding = 1)),    # (batch, 32, 64, 64)
+            SN(nn.Conv2d(3, 32, kernel_size = 5, padding = 2)),    # (batch, 32, 64, 64)
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
             nn.AvgPool2d(kernel_size = 2), # (batch, 32, 32, 32)
             #nn.MaxPool2d(kernel_size = 2),
-            SN(nn.Conv2d(32, 64, kernel_size = 3, padding = 1)),   # (batch, 64, 32, 32)
+            SN(nn.Conv2d(32, 64, kernel_size = 4, padding = 1)),   # (batch, 64, 31, 31)
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.1)
+            #nn.ReLU(),
+        )
+        self.seq_score = nn.Sequential(
+            SN(nn.Conv2d(64, 128, kernel_size = 4, padding = 1)),  # (batch, 128, 30, 30)
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.1),
+            #nn.ReLU(),
+            nn.AvgPool2d(kernel_size = 2), # batch, 128, 15, 15)
+            #nn.MaxPool2d(kernel_size = 2),
+            SN(nn.Conv2d(128, 128, kernel_size = 3, padding = 1)), # (batch, 128, 15, 15)
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.1),
+            #nn.ReLU()
+        )
+        self.seq_recon = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size = 4, padding = 1),  # (batch, 64, 30, 30)
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            SN(nn.Conv2d(64, 128, kernel_size = 3, padding = 1)),  # (batch, 128, 32, 32)
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1),
-            #nn.ReLU(),
-            nn.AvgPool2d(kernel_size = 2), # batch, 128, 16, 16)
+            nn.AvgPool2d(kernel_size = 2), # batch, 64, 15, 15)
             #nn.MaxPool2d(kernel_size = 2),
-            SN(nn.Conv2d(128, 128, kernel_size = 3, padding = 1)), # (batch, 256, 16, 16)
-            nn.BatchNorm2d(128),
+            nn.Conv2d(64, 64, kernel_size = 3, padding = 1), # (batch, 64, 15, 15)
+            nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1),
             #nn.ReLU()
         )
     
     def forward(self, x):
         raw = self.seq(x)
+        raw2score = self.seq_score(raw)
+        raw2recon = self.seq_recon(raw)
         #print(raw.shape)
-        raw = raw.view(-1, 128*16*16)         # (batch, 256*16*16)
-        raw = self.linear1(raw)               # (batch, 512)
-        raw_score = raw                       # reduce parameter
+        raw2score = raw2score.view(-1, 128*15*15)         # (batch, 256*16*16)
+        raw2recon = raw2recon.view(-1, 64*15*15)
+        raw_score = self.linear1(raw2score)         # reduce parameter
         sig_score = self.sig(raw_score)
-        c_reconstr = self.reconstr(raw)       # (batch, c_dim)
+        c_reconstr = self.reconstr(raw2recon)       # (batch, c_dim)
         return raw_score, sig_score, c_reconstr
 
 # Wrapper class
@@ -195,10 +211,12 @@ class InfoGAN(nn.Module):
             #     2) score of false data (D(x'))
             x_g = self.G(z=z, c=c)
             #x_g = x_g + 1e-5*torch.rand_like(x_g)
-            raw, sig, _ = self.D(x_g)
+            raw, sig, crec = self.D(x_g)
             return_dict['noise'] = torch.cat((z, c), dim=-1)
             return_dict['raw_false'] = raw
             return_dict['sig_false'] = sig
+            return_dict['latent_code'] = c
+            return_dict['reconstructed_code'] = crec
             return return_dict
     
     def train_discriminator(self):

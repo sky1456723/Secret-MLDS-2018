@@ -32,6 +32,21 @@ def criterion(pred, flag, train_D, batch_size):
         else:
             loss = -1*torch.sum( torch.log(pred['sig_false']+1e-8) )
             return loss/batch_size
+    elif flag == "Info":
+        if train_D:
+            #expected pred[] : (batch, 1)
+            #output : (1)
+            loss = -1 * (torch.sum( torch.log(pred['sig_true']+1e-8)) +
+                         torch.sum( torch.log(1.0 - pred['sig_false']+1e-8) ) )
+            
+            #print(loss)
+            reconstrcut_err = torch.sum( (pred['latent_code']-pred['reconstructed_code'])**2 )
+            loss += reconstrcut_err
+            #print(loss)
+            return loss/batch_size
+        else:
+            loss = -1*torch.sum( torch.log(pred['sig_false']+1e-8) )
+            return loss/batch_size
     elif flag == "LSGAN":
         a = -1
         b = 1
@@ -41,24 +56,24 @@ def criterion(pred, flag, train_D, batch_size):
             #output : (1)
             real = (pred['raw_true']-b)**2
             gen = (pred['raw_false']-a)**2
-            loss = (torch.mean(real, dim = 0) + torch.mean(gen, dim = 0))
-            return loss
+            loss = (torch.sum(real) + torch.sum(gen))
+            return loss/batch_size
         else:
-            gen = (pred['sig_false']-c)**2
-            loss = torch.mean(gen, dim = 0)
-            return loss
+            gen = (pred['raw_false']-c)**2
+            loss = torch.sum(gen)
+            return loss/batch_size
     elif flag == "WGAN":
         if train_D:
             #expected pred[] : (batch, 1)
             #output : (1)
             real = pred['raw_true']
             gen = pred['raw_false']
-            loss = -1*(torch.mean(real, dim = 0) - torch.mean(gen, dim = 0))
-            return loss
+            loss = -1*(torch.sum(real) - torch.sum(gen))
+            return loss/batch_size
         else:
-            gen = -1*pred['sig_false']
-            loss = torch.mean(gen, dim = 0)
-            return loss
+            gen = pred['raw_false']
+            loss = -1*torch.sum(gen)
+            return loss/batch_size
     elif flag == "WGAN-GP":
         pass
     
@@ -78,6 +93,8 @@ def main(args):
         pass
     print("Finish Loading Data")
     ### MODEL CREATION ###
+    print(args.model_type)
+    print("WGAN? ", args.model_type == 'WGAN')
     model_name = args.model_name+".pkl"
     G_optim_name = args.model_name+"_G.optim"
     D_optim_name = args.model_name+"_D.optim"
@@ -89,13 +106,11 @@ def main(args):
             print("Model exists, please change model_name.")
             exit()
         else:
-            model = Model.InfoGAN(50, 50).to(device)
+            model = Model.InfoGAN(90, 10).to(device)
             G_optimizer = torch.optim.Adam(model.G.parameters(),
-                                           lr=0.0002,
-                                           betas = (0.5, 0.999) )
+                                           lr=0.0002, betas = (0.5,0.999))
             D_optimizer = torch.optim.Adam(model.D.parameters(),
-                                           lr=0.0002,
-                                           betas = (0.5, 0.999) )
+                                           lr=0.0002, betas = (0.5,0.999))
     elif args.load_model:
         if not os.path.isfile(model_name):
             print("Model doesn't exist!")
@@ -107,17 +122,16 @@ def main(args):
         else:
             model = torch.load("./model/"+model_name).to(device)
             G_optimizer = torch.optim.Adam(model.G.parameters(),
-                                           lr=0.0002,
-                                           beta = 0.5)
+                                           lr=0.0002, betas = (0.5,0.999))
             D_optimizer = torch.optim.Adam(model.D.parameters(),
-                                           lr=0.0002,
-                                           beta = 0.5)
+                                           lr=0.0002, betas = (0.5,0.999))
             G_optimizer.load_state_dict(torch.load("./model/"+G_optim_name))
             D_optimizer.load_state_dict(torch.load("./model/"+D_optim_name))
     ### TRAIN ###
     print("Start Training")
-    WGAN_c = 5
-    
+    print("k value: ", update_D)  # k value is the update times of discriminator
+    WGAN_c = 0.01  # use for weight clipping of WGAN
+    model = model.train()
     for e in range(epoch):
         print("Epoch :", e+1)
         true_data_iter = iter(real_dataloader)
@@ -164,7 +178,7 @@ def main(args):
         print('\n')
         print("Epoch loss: D: %4f, G: %4f" % (d_loss/len(real_dataloader), g_loss/len(real_dataloader)))
             
-    torch.save(model, model_name)
+        torch.save(model, model_name)
     torch.save(G_optimizer.state_dict(), G_optim_name)
     torch.save(D_optimizer.state_dict(), D_optim_name)
                 
