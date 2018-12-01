@@ -62,16 +62,17 @@ class Generator(nn.Module):
         self.c_dim = c_dim
 
         self.linear = nn.Sequential(
-            nn.Linear(z_dim + c_dim, 128*16*16)
+            nn.Linear(z_dim + c_dim, 256*16*16)
         )
         self.seq = nn.Sequential(
+            nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            nn.ConvTranspose2d(128, 128, 4, stride = 2, padding = 1),    # (batch, 128, 32, 32)
-            nn.BatchNorm2d(128),
+            nn.ConvTranspose2d(256, 256, 4, stride = 2, padding = 1),    # (batch, 128, 32, 32)
+            nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            nn.Conv2d(128, 128, 5, stride = 1, padding = 2), # (batch, 128, 32, 32)
+            nn.Conv2d(256, 128, 3, stride = 1, padding = 1), # (batch, 128, 32, 32) #changed kernel size
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
@@ -91,7 +92,9 @@ class Generator(nn.Module):
         z_c = torch.cat((z, c), -1) # shape (batch, dim_z + dim_c)
         z_c = self.linear(z_c) # shape (batch, 128*16*16)
         z_c = z_c.view(z_c.shape[0], -1, 16, 16) # 128 channels, 16x16 image
-        return self.seq(z_c)
+        output = self.seq(z_c)
+        #print(output.shape)
+        return output
 
 class Discriminator(nn.Module):
     def __init__(self, c_dim):

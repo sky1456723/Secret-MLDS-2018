@@ -37,7 +37,9 @@ def GetDataset():
     img_list = []
     for item in imgname:
         im = cv2.imread(item)
-        img_list.append(np.transpose(im , (2,0,1))/255.0)
+        #### changed ####
+        #im = cv2.cvtColor(im, cv2.COLOR_BGR2Lab)
+        img_list.append( np.transpose(im , (2,0,1))/255.0)
 
     tag = np.array(pd.read_csv('./data/extra_data/tags.csv'))
     tag_head = np.array(['aqua hair aqua eyes'])
@@ -83,9 +85,14 @@ def GetDataset():
         img_list.append(np.transpose(im , (2,0,1))/255.0)
         feature.append([hair,eye])
     '''
+    
+    hair = np.zeros(len(hair_dict))
+    eye = np.zeros(len(eye_dict))
     extra_imgname2 = glob.glob(r'./data/faces/*.jpg')
     for item in extra_imgname2:
         im = cv2.imread(item)
+        #### changed ####
+        #im = cv2.cvtColor(im, cv2.COLOR_BGR2Lab)
         im = cv2.resize(im, (64,64), interpolation=cv2.INTER_CUBIC)
         img_list.append(np.transpose(im , (2,0,1))/255.0)
         feature.append([hair,eye])
