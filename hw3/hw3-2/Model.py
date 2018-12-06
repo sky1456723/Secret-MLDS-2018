@@ -198,36 +198,35 @@ class ACGAN(nn.Module):
         self.train_D = False
     
     def forward(self, x=None, c=None, z=None, c_z=None, batch_size=None):
-        # Check input size & number of 1's
-        # x and c are not used to train generator; they are necessary in training of discriminator
-        if type(x) is torch.Tensor:
-            assert x.shape[1] == 3 and x.shape[2] == 64 and x.shape[3] == 64, \
-                "Error: expected input shape of (batch size, 3, 64, 64), got {}".format(x.shape)
-        if type(c) is torch.Tensor:
-            assert c.shape[1] == self.c_dim, \
-                "Error: wrong input c dim. Expected {}, got {}".format(self.c_dim, c.shape[1])
-            assert c.sum() == 2 * c.shape[0], \
-                "Error: wrong number of 1's. Expected sum of category code to be {}, got {}".format(2*c.shape[0], c.sum())
+        assert x is not None or batch_size is not None, \
+            "Error: you must provide batch size."
+        batch_size = x.shape[0] if x is not None else batch_size
+        
+        # Check noise (z)
         if type(z) is torch.Tensor:
             assert z.shape[1] == self.z_dim, \
                 "Error: wrong input z dim. Expected {}, got {}".format(self.z_dim, z.shape[1])
+        elif z is None:
+            # sample z from gaussian
+            z = torch.randn((batch_size, self.z_dim), dtype=torch.float32).cuda()
+        else:
+            raise TypeError("Type of noise (z) should be either None or Tensor, got {}".format(type(z)))
+        
+        # Check noise category code (c_z)
         if type(c_z) is torch.Tensor:
             assert c_z.shape[1] == self.c_dim, \
                 "Error: wrong input c_z dim. Expected {}, got {}".format(self.c_dim, c_z.shape[1])
-        assert x is not None or batch_size is not None, \
-            "Error: you must provide batch size."
-        
-        return_dict = {}
-        
-        batch_size = x.shape[0] if x is not None else batch_size
-        # This model automatically generates generator input data, thus no data is necessary
-        # except for batch size.
-        if z is None:
-            # sample z from gaussian
-            z = torch.randn((batch_size, self.z_dim), dtype=torch.float32).cuda()
-        if c_z is None:
+            assert c_z.sum() == 2 * c_z.shape[0], \
+                "Error: wrong number of 1's. Expected sum of category code to be {}, got {}".format(2*c_z.shape[0], c_z.sum())
+        elif c_z is None:
             # randomly generate category code
             c_z = two_hot(batch_size, self.c_dim)
+        else:
+            raise TypeError("Type of noise category code (c_z) should be either None or Tensor, got {}".format(type(c_z)))
+        
+        # This model automatically generates generator input data, thus no data is necessary
+        # except for batch size.
+        
         
         if self.train_D:
             # Feed G with automatically generates z and c, produces x'
@@ -240,6 +239,17 @@ class ACGAN(nn.Module):
             #     4) Q(x, c): matchedness of x and c
             #     5) Q(x', c'): matchedness of x' and c'
             #     6) c': category code of x'
+            
+            assert type(x) is torch.Tensor, \
+                "Input data (x) is necessary when training discriminator!"
+            assert x.shape[1] == 3 and x.shape[2] == 64 and x.shape[3] == 64, \
+                "Error: expected input shape of (batch size, 3, 64, 64), got {}".format(x.shape)
+            assert type(c) is torch.Tensor, \
+                "Input category code (c) is necessary when training discriminator!"
+            assert c.shape[1] == self.c_dim, \
+                "Error: wrong input c dim. Expected {}, got {}".format(self.c_dim, c.shape[1])
+            assert c.sum() == 2 * c.shape[0], \
+                "Error: wrong number of 1's. Expected sum of category code to be {}, got {}".format(2*c.shape[0], c.sum())
             
             x_g = self.G(z, c_z)
             d_x_g, q_x_g = self.D(x_g, c_z)
@@ -281,9 +291,23 @@ class ACGAN(nn.Module):
             
             return return_dict
         
-    def infer(self, c_z):
+    def infer(self, c_z=None, batch_size=None):
         # input a category code into generator to generate corresponding images
         # generate as much images as batch size of c_z
+        if type(c_z) is torch.Tensor:
+            assert c_z.shape[1] == self.c_dim, \
+                "Error: wrong input c_z dim. Expected {}, got {}".format(self.c_dim, c_z.shape[1])
+            assert c_z.sum() == 2 * c_z.shape[0], \
+                "Error: wrong number of 1's. Expected sum of category code to be {}, got {}". \
+                format(2*c_z.shape[0], c_z.sum())
+        elif c_z is None:
+            # randomly generate category code
+            assert batch_size is not None, \
+                "Error: you must provide batch size."
+            c_z = two_hot(batch_size, self.c_dim)
+        else:
+            raise TypeError("Type of noise category code (c_z) should be either None or Tensor, got {}".format(type(c_z)))
+        
         self.eval()
         with torch.no_grad():
             z = torch.randn((c_z.shape[0], self.z_dim), dtype=torch.float32).cuda()
@@ -330,6 +354,14 @@ def main():
     print("\nCategory code:")
     print(model(x=test_x, z=test_z, c=test_c, c_z=test_c_z)['category_code_false'])
     
+    print("\nInfer:")
+    print(model.infer(test_c_z))
+    
+    print("\nInfer:")
+    print(model.infer(batch_size=batch_size))
+    
+    # invalid input
+    test_c_z[-1] = 1
     print("\nInfer:")
     print(model.infer(test_c_z))
     
