@@ -18,7 +18,7 @@ num_dataset          Decide which dataset to load #please enter "1" for this arg
 --model_type         Decide which kind of loss function to use ("Base" for NSGAN, "WGAN" for WGAN, "LSGAN" for LSGAN)
 -e, --epoch_number   Decide how many epoch to train (defaut=20)
 -b, --batch_size     Decide the batch size (default=50)
--k                   Decide how many times D updates each batch
+-k                   Decide how many times D updates per batch
 -l, --load_model     Load a model with MODEL_NAME
 -n, --new_model      Create a new model
 ```  
