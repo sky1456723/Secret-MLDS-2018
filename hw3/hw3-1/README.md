@@ -3,7 +3,7 @@ This script is used to get the result images.
 ```
 usage: Prediction.py [-h] model output  
 -h      Help  
-model   the model name to use  
+model   the name of the model to use  
 output  the output path for the result  
 ```
 # Train  
