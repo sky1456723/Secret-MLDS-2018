@@ -68,7 +68,7 @@ class Generator(nn.Module):
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
-            nn.ConvTranspose2d(256, 256, 4, stride = 2, padding = 1),    # (batch, 128, 32, 32)
+            nn.ConvTranspose2d(256, 256, 4, stride = 2, padding = 1),    # (batch, 256, 32, 32)
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.1),
             #nn.ReLU(),
@@ -90,8 +90,8 @@ class Generator(nn.Module):
 
     def forward(self, z, c):
         z_c = torch.cat((z, c), -1) # shape (batch, dim_z + dim_c)
-        z_c = self.linear(z_c) # shape (batch, 128*16*16)
-        z_c = z_c.view(z_c.shape[0], -1, 16, 16) # 128 channels, 16x16 image
+        z_c = self.linear(z_c) # shape (batch, 256*16*16)
+        z_c = z_c.view(z_c.shape[0], -1, 16, 16) # 256 channels, 16x16 image
         output = self.seq(z_c)
         #print(output.shape)
         return output
@@ -149,7 +149,7 @@ class Discriminator(nn.Module):
         raw2score = raw2score.view(-1, 128*15*15)         # (batch, 256*16*16)
         raw2recon = raw2recon.view(-1, 64*15*15)
         raw_score = self.linear1(raw2score)         # reduce parameter
-        sig_score = self.sig(raw_score)
+        sig_score = self.sig(raw_score)             # the difference between raw_score and sig_score: whether pass sigmoid 
         c_reconstr = self.reconstr(raw2recon)       # (batch, c_dim)
         return raw_score, sig_score, c_reconstr
 
@@ -223,6 +223,10 @@ class InfoGAN(nn.Module):
             return return_dict
     
     def train_discriminator(self):
+        '''
+        train_discriminator and train_generator changes the value of train_D;
+        use train_D to confirm whether the model is in generator stage or dicriminator stage;
+        '''
         self.train_D = True
         
     def train_generator(self):
