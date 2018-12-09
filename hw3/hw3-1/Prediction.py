@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 import argparse
 
 def save_imgs(generator, output_path, z1, z2):
-    #import matplotlib.pyplot as plt
+    ‘’‘
+    z1, z2 is the dimension of random noise and condition noise respectively
+    r*c is the number of generated pictures at one time
+    ’‘’
     np.random.seed(179)
     r, c = 5, 5
     noise_z = np.random.normal(0, 1, (r * c, z1))
@@ -17,6 +20,7 @@ def save_imgs(generator, output_path, z1, z2):
     gen_imgs = generator(noise_z, noise_c) * 255
     gen_imgs = gen_imgs.detach().cpu().numpy().astype(np.int32)
     gen_imgs = np.transpose(gen_imgs, [0,2,3,1])
+    # plot r*c pictures in one figure
     fig, axs = plt.subplots(r, c)
     cnt = 0
     for i in range(r):
@@ -70,5 +74,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='GAN HW3-1')
     parser.add_argument("model", type=str)
     parser.add_argument("output", type=str)
+    # 'output' is the output path of generated pictures
     args = parser.parse_args()
     main(args)
