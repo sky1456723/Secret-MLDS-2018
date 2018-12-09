@@ -22,6 +22,11 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 ### CRITERION ###
 def criterion(pred, flag, train_D, batch_size):
+    '''
+    train_D: boolean. If True, train discriminator; else generator
+    flag: string, imply which kind of GAN to use: baisc GAN, Info GAN, LSGAN, WGAN
+    pred: dictionary, contains some outputs of discriminator
+    '''
     if flag == "Base":
         if train_D:
             #expected pred[] : (batch, 1)
@@ -83,7 +88,7 @@ def main(args):
     print("Loading Data")
     epoch = args.epoch_number
     batch_size = args.batch_size
-    update_D = args.k
+    update_D = args.k # type:int; updata_D is the updating times at each training epoch
     if args.num_dataset == 1:
         real_dataset = Data.GetDataset()
         real_dataloader = torch.utils.data.DataLoader(dataset = real_dataset,
