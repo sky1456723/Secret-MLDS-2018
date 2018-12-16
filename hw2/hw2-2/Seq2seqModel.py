@@ -158,7 +158,7 @@ class LuongAttnDecoderRNN(nn.Module):
         attn_weights = self.attn(rnn_output, encoder_outputs)
 
         # Multiply attention weights to encoder outputs to get new "weighted sum" context vector
-        # attn_weights size: (batch size,1, hidden size)
+        # context size: (batch size,1, hidden size)
         context = attn_weights.bmm(encoder_outputs.transpose(0, 1))
         rnn_output = rnn_output.squeeze(0)
         context = context.squeeze(1)
