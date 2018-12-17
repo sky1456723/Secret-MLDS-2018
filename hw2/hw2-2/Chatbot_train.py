@@ -174,6 +174,7 @@ def main(opts):
         model = Model(w2v_size=wv.vector_size,
                       one_hot_size=len(wv.vocab),
                       optimizer=opts.optimizer).to(device)
+        #### opts.optimizer is a string, 'Adam' or 'SGD' ####
 
     if opts.remove_model:
         if not os.path.isfile(opts.model_name):
@@ -209,6 +210,7 @@ def main(opts):
                 exit()
             optim_state = torch.load(optim_name)
             optim.load_state_dict(optim_state)
+            #### sometimes the parameter setting of optim of the load_model is not the same as line 192~193 ####
         
 
     x = range(opts.epoch_number)
