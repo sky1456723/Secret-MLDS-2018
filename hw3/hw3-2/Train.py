@@ -84,17 +84,19 @@ def criterion(prediction, flag, train_D, batch_size, epsilon=0, feat1=None, feat
         if train_D:
             #expected prediction[] : (batch, 1)
             #output : (1)
-            loss = -1 * (torch.sum(torch.log(prediction['genuineness_true_sig']+epsilon)) +
+            loss = -1/batch_size * (torch.sum(torch.log(prediction['genuineness_true_sig']+epsilon)) +
                          torch.sum(torch.log(1.0 - prediction['genuineness_false_sig']+epsilon)))
-            loss += -1 * (torch.sum(torch.log(prediction['matchedness_true_sig']+epsilon)) +
-                         torch.sum(torch.log(prediction['matchedness_false_sig']+epsilon)))
+            loss = -1/batch_size * (torch.sum(torch.log(prediction['matchedness_true_sig']+epsilon)) +
+                         torch.sum(torch.log(1.0 - prediction['matchedness_false_sig']+epsilon)))
+            #loss += F.mse_loss(prediction['reconstruction_code'], prediction['noise'], )
             
-            return loss/batch_size
+            return loss
         else: # train_G
-            loss = -1 * (torch.sum(torch.log(prediction['genuineness_false_sig']+epsilon)))
-            loss += -1 * (torch.sum(torch.log(prediction['matchedness_false_sig']+epsilon)))
+            loss = -1/batch_size * (torch.sum(torch.log(prediction['genuineness_false_sig']+epsilon)))
+            loss = -1/batch_size * (torch.sum(torch.log(prediction['matchedness_false_sig']+epsilon)))
+            #loss += F.mse_loss(prediction['reconstruction_code'], prediction['noise'])
             
-            return loss/batch_size
+            return loss
     ###***  Part modified by Jeff ends  ***###
     elif flag == "ACGAN2":
         
@@ -145,7 +147,8 @@ def main(args):
             print("Model exists, please change model_name.")
             exit()
         else:
-            model = Model.ACGAN(z_dim = 100, c_dim = 12 + 10, gen_leaky = args.gen_lk, dis_leaky = args.dis_lk).to(device)
+            model = Model.ACGAN(z_dim = 100, c_dim = 12 + 10, gen_leaky = args.gen_lk, dis_leaky = args.dis_lk,
+                               gen_momentum = 0.9, dis_momentum = 0.9).to(device)
 #             model = Model.ACGAN(90, 12 + 10, gen_leaky=0, dis_leaky=0).to(device)
             G_optimizer = torch.optim.Adam(model.G.parameters(),
                                            lr=args.lr, betas = (0.5,0.999))
@@ -176,7 +179,7 @@ def main(args):
     ### TRAIN ###
     print("Start Training")
     print("k value: ", update_D)  # k value is the update times of discriminator
-    # WGAN_c = 0.01  # use for weight clipping of WGAN
+    #WGAN_c = 0.01  # use for weight clipping of WGAN
     model = model.train()
     for e in range(epoch):
         print("Epoch :", e + 1)
@@ -194,6 +197,7 @@ def main(args):
                 true_data = true_data.to(torch.float32).to(device)
                 feature1 = feature1.to(device)
                 feature2 = feature2.to(device)
+                
             except:
                 break
                 
@@ -240,8 +244,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--update_d', type=int, default=1)
     parser.add_argument('--update_g', type=int, default=1)
-    parser.add_argument('--gen_lk', type=float, default=0.01)
-    parser.add_argument('--dis_lk', type=float, default=0.01)
+    parser.add_argument('--gen_lk', type=float, default=0.1)
+    parser.add_argument('--dis_lk', type=float, default=0.1)
     parser.add_argument('--epsilon', type=float, default=0)
     mutex = parser.add_mutually_exclusive_group(required = True)
     mutex.add_argument('--load_model', '-l', action='store_true', help='load a pre-existing model')

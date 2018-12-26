@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.utils.spectral_norm as SN
+import torch.nn.functional as F
 import numpy as np
 
 '''
@@ -79,107 +80,137 @@ class Generator(nn.Module):
         self.c_dim = c_dim
 
         self.linear_c = nn.Linear(c_dim, 256)
-        self.linear_z_c = nn.Linear(z_dim + 256, 4*4*512)
+        self.linear_z_c = nn.Linear(z_dim + c_dim, 16*16*256)
         self.seq = nn.Sequential(
-            nn.BatchNorm2d(512, momentum=momentum),
-            nn.LeakyReLU(leaky),
-            nn.ConvTranspose2d(512, 256, 5),                       # (batch, 256, 8, 8)
-            
             nn.BatchNorm2d(256, momentum=momentum),
             nn.LeakyReLU(leaky),
-            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1),  # (batch, 128, 16, 16)
+            nn.ConvTranspose2d(256, 200, 4, stride=2, padding=1),  # (batch, 256, 8, 8)
             
-            nn.BatchNorm2d(128, momentum=momentum),
+            nn.BatchNorm2d(200, momentum=momentum),
             nn.LeakyReLU(leaky),
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),   # (batch, 64, 32, 32)
+            nn.ConvTranspose2d(200, 100, 4, stride=2, padding=1),  # (batch, 256, 16, 16)
+            
+            nn.BatchNorm2d(100, momentum=momentum),
+            nn.LeakyReLU(leaky),
+            nn.Conv2d(100, 64, 3, stride=1, padding=1),   # (batch, 64, 32, 32)
             
             nn.BatchNorm2d(64, momentum=momentum),
             nn.LeakyReLU(leaky),
-            nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1),     # (batch, 3, 64, 64)
+            nn.ConvTranspose2d(64, 3, 3, stride=1, padding=1),     # (batch, 3, 64, 64)
             nn.Sigmoid()
         ) # Deconvolute an image from (batch, 512, 4, 4) to (batch, 3, 64, 64)
 
     def forward(self, z, c):
-        c = self.linear_c(c)                     # (batch, 256)
-        z_c = torch.cat((z, c), -1)              # (batch, dim_z + 256)
+        #c = self.linear_c(c)                     # (batch, 100)
+        z_c = torch.cat((z, c), -1)              # (batch, dim_z + 100)
         z_c = self.linear_z_c(z_c)               # (batch, 4*4*512)
-        z_c = z_c.view(z_c.shape[0], -1, 4, 4)   # (batch, 512, 4, 4)
+        z_c = z_c.view(z_c.shape[0], -1, 16, 16)   # (batch, 512, 4, 4)
         return self.seq(z_c)                     # (batch, 3, 64, 64)
 
 
 class Discriminator(nn.Module):
     def __init__(self, c_dim, leaky, momentum):
         super(Discriminator, self).__init__()
-        
-        self.linear_c = nn.Linear(c_dim, 256)
+        '''
+        self.linear_c = nn.Linear(c_dim, 100)
         self.linear_mat = nn.Sequential(
             # (batch, 512) -> matchedness score (batch, 1)
-            nn.Linear(512, 1)
+            nn.Linear(256*15*15, 1)
         )
-        self.linear_gen = nn.Sequential(
-            # (batch, 256) -> genuineness score (batch, 1)
-            nn.Linear(256, 1)
+        '''
+        self.linear_mat1 = nn.Sequential(
+            # (batch, 512) -> matchedness score (batch, 1)
+            nn.Linear(256*15*15, 12)
+        )
+        self.linear_mat2 = nn.Sequential(
+            # (batch, 512) -> matchedness score (batch, 1)
+            nn.Linear(256*15*15, 10)
         )
         
+        self.linear_gen = nn.Sequential(
+            # (batch, 256) -> genuineness score (batch, 1)
+            nn.Linear(256*15*15, 1)
+        )
+        '''
+        self.linear_recon = nn.Sequential(
+            # (batch, 256) -> genuineness score (batch, 1)
+            nn.Linear(256, 100)  # 100 means z_dim
+        )
+        '''
         self.seq = nn.Sequential(
             # (batch, 3, 64, 64) -> (batch, 512, 4, 4)
-            SN(nn.Conv2d(3, 64, 5, stride=1, padding=2)),      # (batch, 64, 64, 64)
-            nn.BatchNorm2d(64, momentum=momentum),
+            nn.Conv2d(3, 32, 5, stride=1, padding=2),      # (batch, 32, 64, 64)
+            nn.BatchNorm2d(32, momentum=momentum),
             nn.LeakyReLU(leaky),
             nn.AvgPool2d(2, stride=2),                         # (batch, 64, 32, 32)
             
-            SN(nn.Conv2d(64, 128, 5, stride=1, padding=2)),    # (batch, 128, 32, 32)
+            nn.Conv2d(32, 64, 4, stride=1, padding=1),    # (batch, 64, 31, 31)
+            nn.BatchNorm2d(64, momentum=momentum),
+            nn.LeakyReLU(leaky),
+            
+            nn.Conv2d(64, 128, 4, stride=1, padding=1),   # (batch, 128, 30, 30)
             nn.BatchNorm2d(128, momentum=momentum),
             nn.LeakyReLU(leaky),
-            nn.AvgPool2d(2, stride=2),                         # (batch, 128, 16, 16)
             
-            SN(nn.Conv2d(128, 256, 5, stride=1, padding=2)),   # (batch, 256, 16, 16)
+            nn.Conv2d(128, 256, 3, stride=1, padding=1),   # (batch, 256, 30, 30)
             nn.BatchNorm2d(256, momentum=momentum),
             nn.LeakyReLU(leaky),
-            nn.AvgPool2d(2, stride=2),                         # (batch, 256, 8, 8)
-            
-            SN(nn.Conv2d(256, 512, 5, stride=1, padding=2)),   # (batch, 512, 8, 8)
-            nn.BatchNorm2d(512, momentum=momentum),
-            nn.LeakyReLU(leaky),
-            nn.AvgPool2d(2, stride=2),                         # (batch, 512, 4, 4)
+            nn.AvgPool2d(2, stride=2),                         # (batch, 256, 15, 15)
         )
+        '''
         self.seq_mat = nn.Sequential(
             # (batch, 768, 4, 4) -> (batch, 512, 1, 1)
-            SN(nn.Conv2d(768, 512, 4)),
+            nn.Conv2d(356, 256, 4),
+            
         )
         self.seq_gen = nn.Sequential(
             # (batch, 512, 4, 4) -> (batch, 256, 1, 1)
-            SN(nn.Conv2d(512, 256, 4)),
+            nn.Conv2d(256, 256, 4),          
         )
-    
+        self.seq_recon = nn.Sequential(
+            # (batch, 512, 4, 4) -> (batch, 256, 1, 1)
+            nn.Conv2d(256, 256, 4),          
+        )
+        '''
     def forward(self, x, c):
         # conditional GAN discriminator structure:
         # https://www.youtube.com/watch?v=LpyL4nZSuqU
-        x = self.seq(x)                             # (batch, 512, 4, 4)
-        c = self.linear_c(c)                        # (batch, 256)
-        c = c.repeat([1, 4, 4, 1]).transpose(1, 3)  # (batch, 4, 4, 256) -> (batch, 256, 4, 4)
+        x = self.seq(x)                             # (batch, 256, 4, 4)
+        #c = self.linear_c(c)                        # (batch, 256)
+        #c = c.repeat([4, 4, 1, 1]).transpose(0, 2).transpose(1, 3) # adjusted by Jeff.
+        #c = c.view(-1,100,4,4)
         
-        raw = torch.cat((x, c), 1)                  # (batch, 768, 4, 4), raw is used for matchedness here
-        raw = self.seq_mat(raw)                     # (batch, 2048, 1, 1)
-        raw = raw.view(-1, 512)                    # (batch, 512)
-        matchedness = self.linear_mat(raw)          # (batch, 1)
+                                                    # (batch, 4, 4, 256) -> (batch, 256, 4, 4)
+        #raw = torch.cat((x, c), 1)                  # (batch, 768, 4, 4), raw is used for matchedness here
+        raw2 = x.view(-1,256*15*15)                     # (batch, 512, 1, 1)
+        #raw2 = raw2.view(-1, 256)                     # (batch, 512)
         
-        raw = self.seq_gen(x)                       # (batch, 1024, 1, 1), raw is used for genuineness here
-        raw = raw.view(-1, 256)                    # (batch, 256)
-        genuineness = self.linear_gen(raw)          # (batch, 1)
+        matchness12 = self.linear_mat1(raw2)          # (batch, 1)
+        matchness10 = self.linear_mat2(raw2) 
         
-        return matchedness, genuineness
+        #matchness = self.linear_mat(raw2)
+        #raw = self.seq_gen(x)                       # (batch, 1024, 1, 1), raw is used for genuineness here
+        #raw = raw.view(-1, 256)                     # (batch, 256)
+        genuineness = self.linear_gen(raw2)          # (batch, 1)
+        
+        #raw3 = self.seq_recon(x)
+        #raw3 = raw3.view(-1, 256)
+        #recon_err = self.linear_recon(raw3)
+        
+        return genuineness, matchness12, matchness10 
 
 
 def two_hot(batch_size, cat_dim):
     # the category code tensor contains exactly 2 1's in each batch element
     # returns a tensor
-    vec = np.zeros((cat_dim,))
-    vec[0] = vec[1] = 1
+    
+    
     
     out = np.zeros((batch_size, cat_dim))
     for i in range(batch_size):
-        np.random.shuffle(vec)
+        vec = np.zeros((cat_dim,))
+        vec[np.random.randint(0,11)]=1
+        vec[np.random.randint(12,21)]=1
         out[i] = vec # assign shuffled two-hot
     
     return torch.Tensor(out).cuda()
@@ -208,7 +239,8 @@ class ACGAN(nn.Module):
                 "Error: wrong input z dim. Expected {}, got {}".format(self.z_dim, z.shape[1])
         elif z is None:
             # sample z from gaussian
-            z = torch.randn((batch_size, self.z_dim), dtype=torch.float32).cuda()
+            z = torch.randn((batch_size, self.z_dim), dtype=torch.float32)
+            z = (z/torch.norm(z,dim=1,keepdim=True)).cuda()
         else:
             raise TypeError("Type of noise (z) should be either None or Tensor, got {}".format(type(z)))
         
@@ -250,10 +282,10 @@ class ACGAN(nn.Module):
                 "Error: wrong input c dim. Expected {}, got {}".format(self.c_dim, c.shape[1])
             assert c.sum() == 2 * c.shape[0], \
                 "Error: wrong number of 1's. Expected sum of category code to be {}, got {}".format(2*c.shape[0], c.sum())
-            
+            '''
             x_g = self.G(z, c_z)
-            d_x_g, q_x_g = self.D(x_g, c_z)
-            d_x, q_x = self.D(x, c)
+            d_x_g, q_x_g, recon = self.D(x_g, c_z)
+            d_x, q_x, _ = self.D(x, c)
             
             return_dict = {
                 'false_data': x_g,
@@ -265,6 +297,25 @@ class ACGAN(nn.Module):
                 'matchedness_true_sig': torch.sigmoid(q_x),
                 'matchedness_false': q_x_g,
                 'matchedness_false_sig': torch.sigmoid(q_x_g),
+                'category_code_false': c_z,
+                #'reconstruction_code' : recon,
+                'noise' : z
+            }
+            '''
+            x_g = self.G(z, c_z)
+            d_x_g, match12_x_g, match10_x_g = self.D(x_g, c_z)
+            d_x, match12_x, match10_x = self.D(x, c)
+            
+            return_dict = {
+                'false_data': x_g,
+                'genuineness_true': d_x,
+                'genuineness_true_sig': torch.sigmoid(d_x),
+                'genuineness_false': d_x_g,
+                'genuineness_false_sig': torch.sigmoid(d_x_g),
+                'matchedness12_true':  match12_x,
+                'matchedness10_true':  match10_x,
+                'matchedness12_false':  match12_x_g,
+                'matchedness10_false':  match10_x_g,
                 'category_code_false': c_z
             }
             
@@ -277,8 +328,9 @@ class ACGAN(nn.Module):
             #     1) z + c_z
             #     2) D(x'): genuineness of generator output
             #     3) Q(x', c_z): matchedness of x' and c_z
+            '''
             x_g = self.G(z, c_z)
-            d_x_g, q_x_g = self.D(x_g, c_z)
+            d_x_g, q_x_g, recon = self.D(x_g, c_z)
             
             return_dict = {
                 'noise': z,
@@ -286,12 +338,25 @@ class ACGAN(nn.Module):
                 'genuineness_false': d_x_g,
                 'genuineness_false_sig': torch.sigmoid(d_x_g),
                 'matchedness_false': q_x_g,
-                'matchedness_false_sig': torch.sigmoid(q_x_g)
+                'matchedness_false_sig': torch.sigmoid(q_x_g),
+                'reconstruction_code' : recon
+            }
+            '''
+            x_g = self.G(z, c_z)
+            d_x_g, match12_x_g, match10_x_g= self.D(x_g, c_z)
+            
+            return_dict = {
+                'noise': z,
+                'category_code_false': c_z,
+                'genuineness_false': d_x_g,
+                'genuineness_false_sig': torch.sigmoid(d_x_g),
+                'matchedness12_false':  match12_x_g,
+                'matchedness10_false':  match10_x_g,
+                'category_code_false': c_z
             }
             
             return return_dict
-        
-    def infer(self, c_z=None, batch_size=None):
+    def infer(self, c_z=None, batch_size=None, noise_z=None):
         # input a category code into generator to generate corresponding images
         # generate as much images as batch size of c_z
         if type(c_z) is torch.Tensor:
@@ -310,7 +375,10 @@ class ACGAN(nn.Module):
         
         self.eval()
         with torch.no_grad():
-            z = torch.randn((c_z.shape[0], self.z_dim), dtype=torch.float32).cuda()
+            if noise_z is None:
+                z = torch.randn((c_z.shape[0], self.z_dim), dtype=torch.float32).cuda()
+            else:
+                z = noise_z
             out = self.G(z, c_z)
         return out
     
@@ -326,7 +394,7 @@ class ACGAN(nn.Module):
 
 def main():
     ### PARAMETER ###
-    batch_size = 1
+    batch_size = 10
     noise_dim = 256
     cat_dim = 128
     
@@ -344,12 +412,14 @@ def main():
     
     model.train_discriminator()
     print(model(x=test_x, c=test_c).keys())
+    
     model.train_generator()
     print(model(batch_size=batch_size).keys())
     
     model.train_discriminator()
     print("\nGenuineness score:")
     print(model(x=test_x, z=test_z, c=test_c, c_z=test_c_z)['genuineness_true'])
+    
     model.train_generator()
     print("\nCategory code:")
     print(model(x=test_x, z=test_z, c=test_c, c_z=test_c_z)['category_code_false'])
@@ -359,7 +429,7 @@ def main():
     
     print("\nInfer:")
     print(model.infer(batch_size=batch_size))
-    
+        
     # invalid input
     test_c_z[-1] = 1
     print("\nInfer:")
