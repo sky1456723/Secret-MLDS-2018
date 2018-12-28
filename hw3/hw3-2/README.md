@@ -1,0 +1,145 @@
+# Prediction  
+This script is used to get the result images.  
+```
+usage: Prediction.py [-h] model_name output_path  
+-h      Help  
+model_name   the name of the model to use  
+output_path  the output path for the result  
+```
+
+# Train  
+This script is used to train a model.  
+```
+usage: Train.py [-h] [--model_name MODEL_NAME] [--model_type MODEL_TYPE] [--epoch_number EPOCH_NUMBER] [--batch_size BATCH_SIZE] [--lr LR]
+                [--update_d UPDATE_D] [--update_g UPDATE_G] [--gen_lk GEN_LK] [--dis_lk DIS_LK] [--epsilon EPSILON] [--output_path OUTPUT_PATH]
+                (--load_model | --new_model)
+
+optional arguments:
+  -h, --help                                    Show this help message and exit
+  --model_name MODEL_NAME                       Name of the model
+  --model_type MODEL_TYPE                       Decide which kind of loss function to use ("Base" for NSGAN, "WGAN" for WGAN, "LSGAN" for LSGAN), use "ACGAN2" in this case
+  --epoch_number EPOCH_NUMBER, -e EPOCH_NUMBER  Total epoch number to be trained in one session
+  --batch_size BATCH_SIZE, -b BATCH_SIZE        Batch size in this session
+  --lr LR                                       Learning rate (0.0002 is recommended)
+  --update_d UPDATE_D                           Update frequency of discriminator in one batch (default: 1)
+  --update_g UPDATE_G                           Update frequency of generator in one batch (default: 1)
+  --gen_lk GEN_LK                               Slope of Leaky ReLU in generator
+  --dis_lk DIS_LK                               Slope of Leaky ReLU in discriminator
+  --epsilon EPSILON
+  --output_path OUTPUT_PATH                     Output image name
+  --load_model, -l                              Load a pre-existing model
+  --new_model, -n                               Create a new model
+```  
+
+# Model
+
+```
+ACGAN(
+  (G): Generator(
+    (linear_c): Linear(in_features=128, out_features=256, bias=True)
+    (linear_z_c): Linear(in_features=512, out_features=8192, bias=True)
+    (seq): Sequential(
+      (0): BatchNorm2d(512, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (1): LeakyReLU(negative_slope=0)
+      (2): ConvTranspose2d(512, 256, kernel_size=(5, 5), stride=(1, 1))
+      (3): BatchNorm2d(256, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (4): LeakyReLU(negative_slope=0)
+      (5): ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (6): BatchNorm2d(128, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (7): LeakyReLU(negative_slope=0)
+      (8): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (9): BatchNorm2d(64, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (10): LeakyReLU(negative_slope=0)
+      (11): ConvTranspose2d(64, 3, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+      (12): Sigmoid()
+    )
+  )
+  (D): Discriminator(
+    (linear_c): Linear(in_features=128, out_features=256, bias=True)
+    (linear_mat): Sequential(
+      (0): Linear(in_features=512, out_features=1, bias=True)
+    )
+    (linear_gen): Sequential(
+      (0): Linear(in_features=256, out_features=1, bias=True)
+    )
+    (seq): Sequential(
+      (0): Conv2d(3, 64, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
+      (1): BatchNorm2d(64, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (2): LeakyReLU(negative_slope=0)
+      (3): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      (4): Conv2d(64, 128, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
+      (5): BatchNorm2d(128, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (6): LeakyReLU(negative_slope=0)
+      (7): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      (8): Conv2d(128, 256, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
+      (9): BatchNorm2d(256, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (10): LeakyReLU(negative_slope=0)
+      (11): AvgPool2d(kernel_size=2, stride=2, padding=0)
+      (12): Conv2d(256, 512, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
+      (13): BatchNorm2d(512, eps=1e-05, momentum=0.9, affine=True, track_running_stats=True)
+      (14): LeakyReLU(negative_slope=0)
+      (15): AvgPool2d(kernel_size=2, stride=2, padding=0)
+    )
+    (seq_mat): Sequential(
+      (0): Conv2d(768, 512, kernel_size=(4, 4), stride=(1, 1))
+    )
+    (seq_gen): Sequential(
+      (0): Conv2d(512, 256, kernel_size=(4, 4), stride=(1, 1))
+    )
+  )
+)
+```
+
+## Initialization
+
+``` python
+ACGAN(z_dim, c_dim, gen_leaky=0.1, dis_leaky=0.1, gen_momentum=0.9, dis_momentum=0.9)
+```
+
+The model requires two parameters: dimension of noise (`z_dim`) and dimension of category code (`c_dim`). Additionally, negative slopes of leaky ReLU layers of generator and discriminator can be specified by `gen_leaky` and `dis_leaky`; momentums of batch normalization layers of generator and dicriminator can be specified by `gen_momentum` and `dis_momentum`.
+
+## Parameters
+
+``` python
+ACGAN.parameters()
+```
+
+The method `parameters()` returns a dictionary with three keys: `'generator'` corresponds to the parameters of the generator, `'discriminator'` to those of the discriminator, and `'all'` to all parameters.
+
+## Forward
+
+``` python
+ACGAN.forward(x=None, c=None, z=None, c_z=None, batch_size=None)
+```
+
+Depending on the state of the model, there are two mechanisms of forward. Both returns a dictionary of tensors. The model state can be toggled by methods `ACGAN.train_discriminator()` and `ACGAN.train_generator()`.
+
+1) training discriminator: __x and c are necessary in this case.__ The generator produces a batch of fake data depending on `z` and `c_z` (optional, both of which can be provided by user). Both the batch of true data `x` and that of false data are passed through the discriminator. The returned tensors are:
+
+- `'false_data'`: false data `x_g` generated by generator
+- `'genuineness_true'`: how genuine these true data `x` are
+- `'genuineness_true_sig'`: sigmoid score of genuineness of true data `x`
+- `'genuineness_false'`: how genuine these false data `x_g` are
+- `'genuineness_false_sig'`: sigmoid score of genuineness of false data `x_g`
+- `'matchedness_true'`: how matched these true data `x` are with their labels `c`
+- `'matchedness_true_sig'`: sigmoid score of matchedness of true data `x` and labels `c`
+- `'matchedness_false'`: how matched these false data `x_g` are with their labels `c_z`
+- `'matchedness_false_sig'`: sigmoid score of matchedness of false data `x_g` and labels `c_z`
+- `'category_code_false'`: randomly generated (or provided) category code serving as generator input `c_z`
+
+2) training generator: __Either x or batch_size is necessary in this case.__ The generator produces a batch of fake data depending on `z` and `c_z`, if the user provides them, or depending on batch size. This batch is then passed through the discriminator. The returned tensors are:
+
+- `'noise'`: randomly generated (or provided) noise tensor `z`
+- `'category_code_false'`: randomly generated (or provided) category code serving as generator input `c_z`
+- `'genuineness_false'`: how genuine these false data `x_g` are
+- `'genuineness_false_sig'`: sigmoid score of genuineness of false data `x_g`
+- `'matchedness_false'`: how matched these false data `x_g` are with their labels `c_z`
+- `'matchedness_false_sig'`: sigmoid score of matchedness of false data `x_g` and labels `c_z`
+
+## Infer
+
+``` python
+ACGAN.infer(c_z=None, batch_size=None)
+```
+
+Samples the generator by either randomly generated or provided category code. When `c_z` is not specified, the user must provide batch size so that the generator produces as many images. Returns a tensor of size (batch size, 3, 64, 64).
