@@ -13,6 +13,7 @@ import argparse
 import os
 import Model
 import Data
+import Prediction_new as Saveimg
 import time
 import torch.nn.functional as F
 
@@ -167,15 +168,17 @@ def main(args):
             print("Optim file doesn't exist!")
             exit()
         else:
-            model = torch.load("./model/"+model_name).to(device)
+            model = torch.load(model_name).to(device)
             G_optimizer = torch.optim.Adam(model.G.parameters(),
                                            lr=args.lr, betas = (0.5,0.999))
             
             D_optimizer = torch.optim.Adam(model.D.parameters(),
                                            lr=args.lr, betas = (0.5,0.999))
             
-            G_optimizer.load_state_dict(torch.load("./model/"+G_optim_name))
-            D_optimizer.load_state_dict(torch.load("./model/"+D_optim_name))
+            G_optimizer.load_state_dict(torch.load(G_optim_name))
+            D_optimizer.load_state_dict(torch.load(D_optim_name))
+            G_scheduler = torch.optim.lr_scheduler.StepLR(G_optimizer, step_size = 10, gamma = 0.8)
+            D_scheduler = torch.optim.lr_scheduler.StepLR(D_optimizer, step_size = 10, gamma = 0.8)
     ### TRAIN ###
     print("Start Training")
     print("k value: ", update_D)  # k value is the update times of discriminator
@@ -228,10 +231,14 @@ def main(args):
             batch_count += 1
         print(); print()
         print("Epoch loss: D: %4f, G: %4f" % (d_loss/len(real_dataloader), g_loss/len(real_dataloader)))
-            
+        
+        # save model and optim states every epoch
         torch.save(model, model_name)
-    torch.save(G_optimizer.state_dict(), G_optim_name)
-    torch.save(D_optimizer.state_dict(), D_optim_name)
+        torch.save(G_optimizer.state_dict(), G_optim_name)
+        torch.save(D_optimizer.state_dict(), D_optim_name)
+        
+        if e % 5 == 0:
+            Saveimg.save_imgs(model, args.output_path+'_'+str(e//5))
                 
     return 0
 
@@ -247,6 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('--gen_lk', type=float, default=0.1)
     parser.add_argument('--dis_lk', type=float, default=0.1)
     parser.add_argument('--epsilon', type=float, default=0)
+    parser.add_argument('--output_path', type=str, default='default_output')
     mutex = parser.add_mutually_exclusive_group(required = True)
     mutex.add_argument('--load_model', '-l', action='store_true', help='load a pre-existing model')
     mutex.add_argument('--new_model', '-n', action='store_true', help='create a new model')

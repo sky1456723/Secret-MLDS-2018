@@ -44,7 +44,10 @@ def GetDataset():
         #### changed ####
         #im = cv2.cvtColor(im, cv2.COLOR_BGR2Lab)
         if type(im)!=type(None):
-            img_list.append(np.transpose(im, (2,0,1))/255.0)
+            # im is of shape (64, 64, 3)
+            # np.flip(...) added by Sun
+            im = np.flip(im, axis=2) # BGR to RGB
+            img_list.append(np.transpose(im, (2,0,1))/255.0) # to shape (3, 64, 64)
 
     ### *** Jeff modified *** ###
     tag = np.array(pd.read_csv('../hw3-1/data/extra_data/tags.csv'))
