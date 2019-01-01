@@ -7,7 +7,7 @@ def add_arguments(parser):
         parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
         parser.add_argument('--learning_rate', type=float, default=0.01, help='learning rate for training')
     '''
-    parser.add_argument('--batch_size','-b', type = int, default = 32,
+    parser.add_argument('--batch_size','-b', type = int, default = 1,
                         help = 'Specify the batch size for training')
     parser.add_argument('--episode', '-ep', type = int, default = 1000,
                         help = "Specify how many ep play in an epoch")
