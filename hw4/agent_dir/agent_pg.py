@@ -209,19 +209,27 @@ class Agent_PG(Agent):
                         # cumulated_r means experience until someone getting point
                         # also calculate mean and var to do reward normalization
                         
-                        T = len(cumulated_r)
-                        for i in range(T):
-                            cumulated_r[i] += (gamma**(T-i))*reward
-                        cumulated_r.append(reward)
-                        
-                        reward_mean += sum(cumulated_r)
-                        n_reward += len(cumulated_r)
-                        for i in cumulated_r:
-                            reward_var += i**2
-                        
-                        episode_r.append(cumulated_r[-1])
-                        total_reward.extend(cumulated_r)
-                        cumulated_r = []       
+                        # this flag is used to compare with normal policy grad
+                        if not self.hyper_param['base']:
+                            T = len(cumulated_r)
+                            for i in range(T):
+                                cumulated_r[i] += (gamma**(T-i))*reward
+                            cumulated_r.append(reward)
+                            
+                            reward_mean += sum(cumulated_r)
+                            n_reward += len(cumulated_r)
+                            for i in cumulated_r:
+                                reward_var += i**2
+                            
+                            episode_r.append(cumulated_r[-1])
+                            total_reward.extend(cumulated_r)
+                            cumulated_r = []
+                        else:
+                            T = len(cumulated_r)
+                            cumulated_r = [reward]*(T+1)
+                            episode_r.append(cumulated_r[-1])
+                            total_reward.extend(cumulated_r)
+                            cumulated_r = []
                     else:
                         cumulated_r.append(reward)
                     
@@ -251,11 +259,16 @@ class Agent_PG(Agent):
                         
                         #update per episode
                         self.optimizer.zero_grad()
-                        reward_mean = reward_mean/n_reward
-                        reward_stddev = (reward_var/n_reward - (reward_mean)**2)**0.5
                         loss = 0
-                        total_reward = torch.Tensor(total_reward).to(device)
-                        total_reward = (total_reward - reward_mean) / reward_stddev
+                        
+                        if not self.hyper_param['base']:
+                            reward_mean = reward_mean/n_reward
+                            reward_stddev = (reward_var/n_reward - (reward_mean)**2)**0.5
+                            total_reward = torch.Tensor(total_reward).to(device)
+                            total_reward = (total_reward - reward_mean) / reward_stddev
+                        else:
+                            total_reward = torch.Tensor(total_reward).to(device)
+                            
                         action_list = torch.Tensor(action_list).to(device)
                         p_list = torch.stack(p_list).view(-1)
                         
@@ -298,7 +311,7 @@ class Agent_PG(Agent):
                     torch.save(self.model, "./log/"+self.hyper_param['model_name']+".pkl"+str(episode))
                     torch.save(self.optimizer.state_dict(),
                                "./log/"+self.hyper_param['model_name']+".optim")
-                    np.save("training_curve.npy", np.array(self.training_curve))
+                    np.save("training_curve_"+str(episode)+".npy", np.array(self.training_curve))
                     print("Save Model, result = ", best_result)
                     
                     #os.system("python3 main.py --test_pg --env_name Pong-v0 -l --model_name " + self.hyper_param['model_name'])
