@@ -21,13 +21,22 @@ def add_arguments(parser):
                         help = "Specify the optimizer")
     parser.add_argument('--PPO', action='store_true', default = False,
                         help = "Specify to use PPO or not")
-    
+    parser.add_argument('--base', action='store_true', default = False,
+                        help = "Specify to use base policy gradient or not")
     parser.add_argument('--model_name', type = str, default = "Default_model.pkl",
                         help = "Specify the name of the model")
+    parser.add_argument('--Dueling', action='store_true', default = True,
+                        help = "Specify to use Dueling net or not")
+    parser.add_argument('--Noisy', action='store_true', default = True,
+                        help = "Specify to use NoisyNet net or not")
+    
     
     mutex = parser.add_mutually_exclusive_group(required = True)
     mutex.add_argument('--load_model', '-l', action='store_true', help='load a pre-existing model')
     mutex.add_argument('--new_model', '-n', action='store_true', help='create a new model')
     mutex.add_argument('--remove_model', '-r', action='store_true', help='remove a model')
     
+    exploration = parser.add_mutually_exclusive_group(required = False)
+    exploration.add_argument('--epsilon', action='store_true', help='use epsilon greedy')
+    exploration.add_argument('--boltzmann', action='store_true', help='use boltzmann exploration')
     return parser
