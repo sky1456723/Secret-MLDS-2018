@@ -62,8 +62,8 @@ class Agent_DQN(Agent):
                     elif self.hyper_param['optim'] == 'SGD':
                         self.optimizer = torch.optim.SGD(self.current_net.parameters(),
                                                           lr = self.hyper_param['learning_rate'])
-                    state_dict = torch.load(args.model_name+".optim")
-                    self.optimizer.load_state_dict(state_dict)
+                    #state_dict = torch.load(args.model_name+".optim")
+                    #self.optimizer.load_state_dict(state_dict)
                 else:
                     print("Unknown Optimizer or missing state_dict!")
                     exit()
@@ -161,7 +161,7 @@ class Agent_DQN(Agent):
                 self.replay_buffer.append(state_reward_tuple)
                 
                 # get batch data and update current net
-                if len(self.replay_buffer) > batch_size:
+                if len(self.replay_buffer) > batch_size and self.step_count%4 == 0:
                     if not self.hyper_param['base']:
                         batch_data = random.sample(self.replay_buffer, batch_size)
                         loss = self.update_param_DDQN(batch_data)  
@@ -205,7 +205,12 @@ class Agent_DQN(Agent):
         if self.hyper_param['Noisy'] and self.hyper_param["Dueling"]:
             self.current_net.value.sample_noise()
             self.target_net.value.sample_noise()
-            
+        batch_o_t = []
+        batch_o_next = []
+        
+        batch_r_t = []
+        batch_done = []
+        '''
         for one_data in batch_data:
             if self.hyper_param['Noisy']:
                 current_output = self.current_net(torch.Tensor(one_data[0]).to(device), fixed_noise = True)
@@ -220,7 +225,35 @@ class Agent_DQN(Agent):
                 a_next = torch.argmax(a_next)
                 q_target = self.target_net(torch.Tensor(one_data[3]).to(device))[0, a_next].detach()
             loss += F.mse_loss(q_t, 0.99 * (1 - one_data[4]) * q_target+one_data[2])
-        loss /= self.hyper_param['batch_size']
+        '''
+        for one_data in batch_data:
+            batch_o_t.append(one_data[0])
+            batch_o_next.append(one_data[3])
+            batch_r_t.append(one_data[2])
+            batch_done.append(one_data[4])
+        q_t_list = []
+        q_target_list = []
+        if self.hyper_param['Noisy']:
+            current_output = self.current_net(torch.Tensor(batch_o_t).squeeze().to(device), fixed_noise = True)
+            a_next = self.current_net(torch.Tensor(batch_o_next).squeeze().to(device), fixed_noise = True)
+            a_next = torch.argmax(a_next, dim = 1)
+            q_target = self.target_net(torch.Tensor(batch_o_next).squeeze().to(device), fixed_noise = True).detach()
+        else:
+            current_output = self.current_net(torch.Tensor(batch_o_t).squeeze().to(device))
+            a_next = self.current_net(torch.Tensor(batch_o_next).squeeze().to(device))
+            a_next = torch.argmax(a_next, dim = 1)
+            q_target = self.target_net(torch.Tensor(batch_o_next).squeeze().to(device)).detach()
+        for i in range(len(batch_data)):
+            q_t_list.append(current_output[i, batch_data[i][1]])
+            q_target_list.append( q_target[i, a_next[i]])
+        
+        q_t_list = torch.stack(q_t_list)
+        q_target_list = torch.stack(q_target_list)
+        batch_done = torch.Tensor(batch_done).to(device)
+        batch_r_t = torch.Tensor(batch_r_t).to(device)
+        loss = F.mse_loss(q_t_list, (1-batch_done)*0.99*q_target_list + batch_r_t)
+        
+        #loss /= self.hyper_param['batch_size']
         loss.backward()
         self.optimizer.step()
         return loss.item()
