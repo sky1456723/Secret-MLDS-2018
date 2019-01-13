@@ -45,7 +45,7 @@ class NoisyLinear(nn.Linear):
 
 class DQN(nn.Module):
 
-    def __init__(self, h, w, dueling, noisy):
+    def __init__(self, h, w, dueling=False, noisy=False):
         super(DQN, self).__init__()
         
         self.dueling = dueling
