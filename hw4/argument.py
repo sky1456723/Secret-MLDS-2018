@@ -25,9 +25,9 @@ def add_arguments(parser):
                         help = "Specify to use base policy gradient or not")
     parser.add_argument('--model_name', type = str, default = "Default_model.pkl",
                         help = "Specify the name of the model")
-    parser.add_argument('--Dueling', action='store_true', default = True,
+    parser.add_argument('--Dueling', action='store_true',
                         help = "Specify to use Dueling net or not")
-    parser.add_argument('--Noisy', action='store_true', default = True,
+    parser.add_argument('--Noisy', action='store_true',
                         help = "Specify to use NoisyNet net or not")
     
     

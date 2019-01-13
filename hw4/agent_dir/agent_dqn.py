@@ -175,6 +175,11 @@ class Agent_DQN(Agent):
                         loss = self.update_param_DDQN(batch_data)  
                         batch_data = None
                         print("Loss: %4f" % (loss), end = '\r')
+                    elif self.hyper_param['base']:
+                        batch_data = random.sample(self.replay_buffer, batch_size)
+                        loss = self.update_param_base_DQN(batch_data)  
+                        batch_data = None
+                        print("Loss: %4f" % (loss), end = '\r')
                 # update target net every 1000 step
                 if self.step_count % 1000 == 0:
                     print("Update target net")
@@ -199,7 +204,48 @@ class Agent_DQN(Agent):
         # YOUR CODE HERE #
         ##################
         pass
-    
+    def update_param_base_DQN(self, batch_data):
+        """
+        batch_data is a list consist of tuple (o_t, a_t, r_t, o_t+1)
+        o_t & o_t+1 : numpy array shape of (batch, 4, 66, 76)
+        a_t : int
+        r_t : int
+        """
+        
+        self.optimizer.zero_grad()
+        loss = 0
+        if self.hyper_param['Noisy'] and self.hyper_param["Dueling"]:
+            self.current_net.value.sample_noise()
+            self.target_net.value.sample_noise()
+        batch_o_t = []
+        batch_o_next = []
+        
+        batch_r_t = []
+        batch_done = []
+        
+        for one_data in batch_data:
+            batch_o_t.append(one_data[0])
+            batch_o_next.append(one_data[3])
+            batch_r_t.append(one_data[2])
+            batch_done.append(one_data[4])
+        q_t_list = []
+        q_target_list = []
+        current_output = self.current_net(torch.Tensor(batch_o_t).squeeze().to(device))
+        q_target = self.target_net(torch.Tensor(batch_o_next).squeeze().to(device)).detach()
+        a_next = torch.argmax(q_target, dim = 1)
+        for i in range(len(batch_data)):
+            q_t_list.append(current_output[i, batch_data[i][1]])
+            q_target_list.append( q_target[i, a_next[i]])
+        
+        q_t_list = torch.stack(q_t_list)
+        q_target_list = torch.stack(q_target_list)
+        batch_done = torch.Tensor(batch_done).to(device)
+        batch_r_t = torch.Tensor(batch_r_t).to(device)
+        loss = F.mse_loss(q_t_list, (1-batch_done)*0.99*q_target_list + batch_r_t)
+        
+        loss.backward()
+        self.optimizer.step()
+        return loss.item()
     def update_param_DDQN(self, batch_data):
         """
         batch_data is a list consist of tuple (o_t, a_t, r_t, o_t+1)
@@ -266,7 +312,7 @@ class Agent_DQN(Agent):
         self.optimizer.step()
         return loss.item()
             
-    #need change
+    
     def make_action(self, observation, test=False):
         """
         Return predicted action of your agent
