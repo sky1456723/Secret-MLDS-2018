@@ -10,6 +10,8 @@ import os
 from agent_dir.Model import DQN
 
 np.random.seed(1009)
+torch.cuda.manual_seed(1009)
+torch.manual_seed(1009)
 device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
 
 def prepro(o):
