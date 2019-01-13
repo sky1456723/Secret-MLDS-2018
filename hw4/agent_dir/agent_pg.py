@@ -42,6 +42,7 @@ def draw_curve(agent, env, total_episodes=30, seed = 11037):
         while(not done):
             action = agent.make_action(state, test=True)
             state, reward, done, info = env.step(action)
+            # info is useless, we don't use it for later operation
             episode_reward += reward
         
         rewards.append(episode_reward)
@@ -179,8 +180,10 @@ class Agent_PG(Agent):
             for episode in range(self.hyper_param['episode']):
                 
                 o = self.env.reset()
-                self.last_frame = prepro(o)            
+                self.last_frame = prepro(o) 
+                # initial the first frame, otherwise self.last_frame is None
                 action = self.env.action_space.sample()
+                # random sample an action for initialization
                 o, _, _, _ = self.env.step(action)
                 episode_r = []
                 
