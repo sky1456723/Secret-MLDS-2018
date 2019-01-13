@@ -39,6 +39,9 @@ class NoisyLinear(nn.Linear):
     def sample_noise(self):
         torch.randn(self.epsilon_input.size(), out=self.epsilon_input)
         torch.randn(self.epsilon_output.size(), out=self.epsilon_output)
+    def remove_noise(self):
+        torch.zeros(self.epsilon_input.size(), out=self.epsilon_input)
+        torch.zeros(self.epsilon_output.size(), out=self.epsilon_output)
 
 class DQN(nn.Module):
 

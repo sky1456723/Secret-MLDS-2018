@@ -30,8 +30,14 @@ class Agent_DQN(Agent):
             #you can load your model here
             print('loading trained model')
             model = torch.load(args.model_name+".ckpt")
-            self.current_net = model['current_net']
+            self.current_net = DQN(84, 84, args.Dueling, args.Noisy)
+            self.current_net.load_state_dict( model['current_net'].state_dict())
             self.hyper_param = args.__dict__
+            if self.current_net.noisy:
+                self.current_net.linear_1[0].remove_noise()
+                self.current_net.advantage.remove_noise()
+                self.current_net.value.remove_noise()
+            self.current_net = self.current_net.to(device)
             
         elif args.train_dqn:
             if args.load_model:
@@ -302,7 +308,7 @@ class Agent_DQN(Agent):
                 
         else:
             observation = prepro(observation)
-            q_value = self.current_net(torch.Tensor(observation).to(device))
+            q_value = self.current_net(torch.Tensor(observation).to(device), fixed_noise = True)
             return torch.argmax(q_value).item()+1
     
     def update_target_net(self):
