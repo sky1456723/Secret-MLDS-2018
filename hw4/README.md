@@ -70,3 +70,7 @@ to test our improved policy gradient (hw4-1)
 python3 main.py --test_dqn -l --model_name ./model/4-2/test2_dqn_3000_7500 --Dueling --Noisy 
 ```  
 to test our improved dqn (hw4-2)  
+  
+or you can use --base to train not improved version in both 4-1 and 4-2(without --Dueling and --Noisy)
+
+
