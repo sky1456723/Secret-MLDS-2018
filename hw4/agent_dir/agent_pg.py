@@ -24,11 +24,10 @@ def prepro(o,image_size=[105,80]):
         Grayscale image, shape: (80, 80, 1)
     
     """
-    y = 0.2126 * o[:, :, 0] + 0.7152 * o[:, :, 1] + 0.0722 * o[:, :, 2] #gray scale 
-    resized = skimage.transform.resize(y, image_size)[17:-8,:]
-    return np.expand_dims(resized.astype(np.float32),axis=2) 
+    y = 0.2126 * o[:, :, 0] + 0.7152 * o[:, :, 1] + 0.0722 * o[:, :, 2]   #gray scale 
+    resized = skimage.transform.resize(y, image_size)[17:-8,:]            #delete score board
+    return np.expand_dims(resized.astype(np.float32),axis=2)              #shape (height, wodth) -> (1, height, wodth)
 
-#left to draw curve, unfinished
 def draw_curve(agent, env, total_episodes=30, seed = 11037):
     rewards = []
     env.seed(seed)
@@ -54,29 +53,21 @@ def draw_curve(agent, env, total_episodes=30, seed = 11037):
 
 class Agent_PG(Agent):
     def __init__(self, env, args):
-        """
-        Initialize every things you need here.
-        For example: building your model
-        """
 
         super(Agent_PG,self).__init__(env)  #with self.env = env in "Agent"
         
         if args.test_pg:
-            #you can load your model here
             print('loading trained model')
             self.model = torch.load(args.model_name+ ".pkl")
             self.hyper_param = args.__dict__
             self.last_frame = None
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
         elif args.train_pg:
             self.optimizer = ['Adam', 'RMSprop', 'SGD']
             self.hyper_param = args.__dict__    #make all args to a dict
-            self.argument = args    #left to use draw_curve
+            self.argument = args                #left to use draw_curve
             self.training_curve = []
-            self.last_frame = None  #used to test
+            self.last_frame = None              #used to test
             
             if args.new_model:
                 if os.path.isfile(args.model_name+".pkl"):
@@ -138,25 +129,13 @@ class Agent_PG(Agent):
 
     def init_game_setting(self):
         """
-
         Testing function will call this function at the begining of new game
-        Put anything you want to initialize if necessary
-
         """
-        ##################
-        # YOUR CODE HERE #
-        ##################
         self.last_frame = None
         pass
 
 
     def train(self):
-        """
-        Implement your training algorithm here
-        """
-        ##################
-        # YOUR CODE HERE #
-        ##################
         gamma = self.hyper_param['gamma']
         batch = self.hyper_param['batch_size']
         baseline = self.hyper_param['baseline']
@@ -172,18 +151,17 @@ class Agent_PG(Agent):
         n_reward = 0
         n_b = 1
         
+        #record loss and result
         loss = 0
         best_result = -21
-        lastest_r = []
+        lastest_r = [] #use to print the newest result(last 30 episode)
         
         if not self.hyper_param['PPO']:
             for episode in range(self.hyper_param['episode']):
-                
-                o = self.env.reset()
-                self.last_frame = prepro(o) 
-                # initial the first frame, otherwise self.last_frame is None
-                action = self.env.action_space.sample()
-                # random sample an action for initialization
+
+                o = self.env.reset()                     # initialize the game
+                self.last_frame = prepro(o)              # initial the first frame, otherwise self.last_frame is None
+                action = self.env.action_space.sample()  # random sample an action for initialization
                 o, _, _, _ = self.env.step(action)
                 episode_r = []
                 
@@ -212,7 +190,7 @@ class Agent_PG(Agent):
                         # cumulated_r means experience until someone getting point
                         # also calculate mean and var to do reward normalization
                         
-                        # this flag is used to compare with normal policy grad
+                        # `base` flag is used to compare with normal policy grad
                         if not self.hyper_param['base']:
                             T = len(cumulated_r)
                             for i in range(T):
@@ -236,7 +214,7 @@ class Agent_PG(Agent):
                     else:
                         cumulated_r.append(reward)
                     
-            
+                    # accumulate result for 'batch' times
                     if done and n_b != batch:
                         n_b +=1
                         self.init_game_setting()
@@ -260,11 +238,12 @@ class Agent_PG(Agent):
                             print("Episode : %d Mean : %4f" % (episode, np.mean(lastest_r)), end = ' ')
 
                         
-                        #update per episode
+                        #update
                         self.optimizer.zero_grad()
                         loss = 0
                         
                         if not self.hyper_param['base']:
+                            # reward normalization: subtracted by mean, and divided by standard deviation
                             reward_mean = reward_mean/n_reward
                             reward_stddev = (reward_var/n_reward - (reward_mean)**2)**0.5
                             total_reward = torch.Tensor(total_reward).to(device)
@@ -304,7 +283,7 @@ class Agent_PG(Agent):
                         
                         
                 if episode % 500 == 0 and episode != 0:
-                    #Testing per 100 episode
+                    #Test and save per 500 episode
                     print("Testing")
                     test_env = Environment('Pong-v0', self.argument, test=True)
                     result = draw_curve(agent = self, env=test_env)
@@ -338,9 +317,6 @@ class Agent_PG(Agent):
                 the predicted action from trained model
                 
         """
-        ##################
-        # YOUR CODE HERE #
-        ##################
         
         #action 2 or 4 means up, action 3 or 5 means down
         
