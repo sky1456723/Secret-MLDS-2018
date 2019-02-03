@@ -141,15 +141,15 @@ class Agent_PG(Agent):
         baseline = self.hyper_param['baseline']
         
         #initial some variable to do reward normalization and calculate grad
-        total_reward = []
-        cumulated_r = []
-        p_list = []
-        action_list = []
+        total_reward = [] # left to reward normalization
+        cumulated_r = []  # record the reward (with discounted factor) in each time step
+        p_list = []       # record the probability of action (output of model), to calculate BCELoss 
+        action_list = []  # record the action the model takes, to calculate BCELoss
         
-        reward_mean = 0
-        reward_var = 0
-        n_reward = 0
-        n_b = 1
+        reward_mean = 0   # accumulate all the reward
+        reward_var = 0    # accumulate square of all the reward
+        n_reward = 0      # calculate # of discounted reward (this is used to calculate mean and variance)
+        n_b = 1           # calculate # of ep, to use a batch to update
         
         #record loss and result
         loss = 0
